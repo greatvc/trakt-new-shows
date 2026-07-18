@@ -514,8 +514,8 @@ if (isset($_GET['debug'])) {
 
 <hr class="footer-divider">
 <footer class="site-footer">
-    <p>Design, idea, coded &amp; vibe coded by great_vc - 2026<br>
-    No AI was harmed during this, except from Fuck you Gemini cannot distinguish &lt;body&gt; from &lt;script&gt;</p>
+    <p>Designed, idea, coded &amp; vibe coded by great_vc - 2026<br>
+    No AI was harmed during this, except from Fuck you Gemini you cannot even distinguish &lt;body&gt; from &lt;script&gt;</p>
 </footer>
 
 <script>
