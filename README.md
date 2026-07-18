@@ -1,6 +1,4 @@
-<p align="center">
-  <img src="images/tvbanner.png" alt="Trakt New Shows banner" width="100%">
-</p>
+![Trakt New Shows banner](images/tvbanner.png)
 
 <h1 align="center">Trakt New Shows</h1>
 
