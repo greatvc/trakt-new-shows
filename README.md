@@ -1,4 +1,4 @@
-![Trakt New Shows banner](./images/tvbanner.png)
+![Trakt New Shows banner](https://github.com/greatvc/trakt-new-shows/blob/main/images/tvbanner.png?raw=true)
 
 <h1 align="center">Trakt New Shows</h1>
 
