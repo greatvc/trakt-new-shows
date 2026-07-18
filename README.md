@@ -1,9 +1,13 @@
-![Trakt New Shows banner](https://github.com/greatvc/trakt-new-shows/blob/main/images/tvbanner.png?raw=true)
-
-<h1 align="center">Trakt New Shows</h1>
+<p align="center">
+  <img src="images/tvbanner.png" width="480" alt="Trakt New Shows banner">
+</p>
 
 <p align="center">
-  A self-hosted PHP page that shows you every new TV show premiering in a given month — something Trakt's official site stopped offering after its <a href="https://forums.trakt.tv/t/new-trakt-feedback/84794" target="_blank">V3 redesign</a>.
+  <img src="images/title-banner.svg" width="500" alt="Trakt New Shows">
+</p>
+
+<p align="center">
+  A self-hosted PHP page that shows you every new TV show premiering in a given month — something Trakt's official site stopped offering after its <a href="https://forums.trakt.tv/t/new-trakt-feedback/84794/836">V3 redesign</a>.
 </p>
 
 <p align="center">
@@ -35,7 +39,33 @@ Trakt gates advanced calendar filtering — by genre, country, and network — b
 
 If your Trakt account isn't VIP, these filters may be silently ignored by the API. The unfiltered calendar (all new shows for the month) works on any account.
 
-## Setup
+## Configuration
+
+All filtering is controlled by three PHP variables near the top of `trakt_new_shows_fixed.php` (in the `USER CONFIGURATION` section, around line 155):
+
+### Genres — `$TraktGenres`
+```php
+$TraktGenres = '-animation,-anime,-children,-game-show,-home-and-garden,-music,-reality,-special-interest,-talk-show';
+```
+A comma-separated list of [Trakt genre slugs](https://trakt.tv/genres). Prefix a genre with `-` to **exclude** it (the default list above excludes reality TV, talk shows, anime, etc.). Leave off the `-` to only **include** that genre instead. Set to `''` (empty string) to disable genre filtering entirely.
+
+### Countries — `$TraktCountries`
+```php
+$TraktCountries = 'ar,au,at,be,br,ca,cl,cn,co,cz,dk,fi,fr,de,gr,hk,is,in,ie,it,jp,kr,mx,nl,nz,no,pl,pt,za,es,se,ch,tr,gb,us';
+```
+A comma-separated list of 2-letter [ISO country codes](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) — only shows produced in these countries will show up. Remove any codes you don't want, or set to `''` to disable country filtering.
+
+### Networks/channels — `$TraktNetworkFilter`
+```php
+$TraktNetworkFilter = []; // empty = no network filtering, shows everything
+
+$TraktNetworkFilter = [
+    "Netflix", "Prime Video", "HBO", "Apple TV+", "Disney+"
+];
+```
+A PHP array of exact network names (case-sensitive, must match Trakt's naming). Leave it as `[]` to show shows from every network. Fill it in to **only** show premieres from those specific channels/services. A large commented-out example list is included right below it in the file — uncomment and trim it to what you want.
+
+⚠️ As noted above, genre/country/network filtering are advanced-filter features that Trakt gates behind [VIP](https://trakt.tv/vip/filtering) at the API level.
 
 1. Clone or download this repository to your PHP-capable web server
 2. Copy `config.example.php` to `config.php` and add your own Trakt API credentials (get them at [trakt.tv/oauth/applications](https://trakt.tv/oauth/applications))
