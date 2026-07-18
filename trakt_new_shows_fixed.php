@@ -1,4 +1,9 @@
 <?php
+// ============================================================================
+// VERSION - bump this manually with each release. Shown in the footer.
+// ============================================================================
+$TraktVersion = 'v1.0.1';
+
 date_default_timezone_set('Europe/Athens');
 
 // Renders a friendly month-selector page when ?month= is missing or invalid,
@@ -84,7 +89,11 @@ function renderMonthPicker($badValue, $year) {
 }
 
 // ============================== USER CONFIGURATION ==============================
-$TraktYear  = date("Y");
+// Year can be overridden via ?year= (needed so Dec -> Jan month navigation can cross into the next year)
+$requestedYear = $_GET['year'] ?? null;
+$TraktYear = ($requestedYear !== null && ctype_digit((string)$requestedYear))
+    ? (int)$requestedYear
+    : (int)date("Y");
 
 // Month now comes from ?month=1..12 in the URL instead of being hardcoded.
 // Missing or invalid value -> show a friendly month-picker page instead of erroring out.
@@ -99,6 +108,12 @@ if (!$isValidMonth) {
     exit;
 }
 $TraktMonth = (int)$requestedMonth;
+
+// Prev/next month targets for the header navigation arrows (wraps across year boundaries)
+$prevMonth = $TraktMonth - 1; $prevYear = $TraktYear;
+if ($prevMonth < 1) { $prevMonth = 12; $prevYear--; }
+$nextMonth = $TraktMonth + 1; $nextYear = $TraktYear;
+if ($nextMonth > 12) { $nextMonth = 1; $nextYear++; }
 
 // ============================================================================
 // CENTRAL STORAGE API (replaces localStorage so state is shared across devices)
@@ -146,13 +161,13 @@ if (isset($_GET['api']) && $_GET['api'] === 'state') {
 
 $TraktDays  = (int)date('t', strtotime(sprintf("%04d-%02d-01", $TraktYear, $TraktMonth)));           
 
-// Credentials live in config.php, which is NOT committed to git (see .gitignore).
-// Copy config.example.php to config.php and fill in your own values.
-$configPath = __DIR__ . '/config.php';
-if (!file_exists($configPath)) {
-    die('Missing config.php. Copy config.example.php to config.php and add your Trakt API credentials.');
+// Trakt API credentials live in config.php (NOT committed to git - see config.example.php).
+$configFile = __DIR__ . '/config.php';
+if (!file_exists($configFile)) {
+    http_response_code(500);
+    die('Missing config.php. Copy config.example.php to config.php and fill in your Trakt API credentials.');
 }
-require $configPath;
+require $configFile;
 
 $TraktGenres    = '-animation,-anime,-children,-game-show,-home-and-garden,-music,-reality,-special-interest,-talk-show';
 // $TraktCountries = 'be,dk,fr,de,is,it,kr,mx,no,es,gb,us';
@@ -171,11 +186,9 @@ $TraktNetworkFilter = [
 ];
 */
 
-// Served locally from the images/ folder instead of Backblaze, to avoid burning
-// B2 bandwidth credits on every page load (these logos never change).
-$TraktLogoTop    = 'images/trakttop.png';
-$TraktLogoButton = 'images/traktlogo.png';
-$TraktNoPoster   = 'images/nopostertv.png';
+$TraktLogoTop    = '/images/trakttop.png';
+$TraktLogoButton = '/images/traktlogo.png';
+$TraktNoPoster   = '/images/nopostertv.png';
 // ===================================================================================
 
 $startDate = sprintf("%04d-%02d-01", $TraktYear, $TraktMonth);
@@ -288,7 +301,7 @@ if (isset($_GET['debug'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
    <title>New Shows &ndash; <?php echo htmlspecialchars($monthLabel); ?></title>
-	<link rel="shortcut icon" href="images/favicon.ico">
+	<link rel="shortcut icon" href="/images/favicon.ico">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;700&display=swap" rel="stylesheet">
@@ -307,6 +320,19 @@ if (isset($_GET['debug'])) {
         header.hero { padding: 56px 6vw 34px 6vw; border-bottom: 1px solid var(--card-border); background: linear-gradient(180deg, rgba(232,181,69,0.06), transparent); }
         .brand-row { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
         .brand-row img.brand-logo { height: 64px; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.55)); }
+        .month-nav { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+        .month-nav-btn {
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+            width: 46px; height: 46px; border-radius: 50%;
+            background: var(--bg-panel); border: 1px solid var(--card-border);
+            transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease;
+        }
+        .month-nav-btn img { width: 20px; height: 20px; transition: transform .2s ease; }
+        .month-nav-btn:hover { border-color: var(--gold); background: rgba(232,181,69,0.14); box-shadow: 0 0 20px rgba(232,181,69,0.4); }
+        .month-nav-btn.prev:hover { transform: scale(1.12) translateX(-4px); }
+        .month-nav-btn.next:hover { transform: scale(1.12) translateX(4px); }
+        .month-nav-btn:hover img { transform: scale(1.08); }
+        .month-nav-btn:active { transform: scale(0.95); }
         .brand-row h1 {
             font-family: 'Bebas Neue', sans-serif; font-size: clamp(2.4rem, 5.6vw, 4.2rem); letter-spacing: 2px;
             background: linear-gradient(90deg, var(--gold-soft), var(--gold) 40%, var(--crimson)); -webkit-background-clip: text; color: transparent;
@@ -390,6 +416,7 @@ if (isset($_GET['debug'])) {
         .footer-divider { border: 0; border-top: 1px solid var(--card-border); margin: 56px 6vw 0 6vw; }
         .site-footer { text-align: center; padding: 22px 6vw 36px 6vw; }
         .site-footer p { font-size: 0.72rem; color: var(--text-faint); opacity: 0.55; line-height: 1.7; }
+        .site-footer .version-tag { color: var(--gold-soft); font-weight: 700; letter-spacing: 0.3px; }
     </style>
 </head>
 <body>
@@ -397,7 +424,15 @@ if (isset($_GET['debug'])) {
 <header class="hero">
     <div class="brand-row">
         <img class="brand-logo" src="<?php echo htmlspecialchars($TraktLogoTop); ?>" alt="Trakt">
-        <h1>New Shows &mdash; <?php echo htmlspecialchars($monthLabel); ?></h1>
+        <div class="month-nav">
+            <a class="month-nav-btn prev" href="?month=<?php echo $prevMonth; ?>&amp;year=<?php echo $prevYear; ?>" title="Previous month" aria-label="Previous month">
+                <img src="/images/arrow-left.png" alt="Previous month">
+            </a>
+            <h1>New Shows &mdash; <?php echo htmlspecialchars($monthLabel); ?></h1>
+            <a class="month-nav-btn next" href="?month=<?php echo $nextMonth; ?>&amp;year=<?php echo $nextYear; ?>" title="Next month" aria-label="Next month">
+                <img src="/images/arrow-right.png" alt="Next month">
+            </a>
+        </div>
     </div>
     <div class="sub">
         <span>📊 <?php echo $totalShowsFetched; ?> premiere<?php echo ($totalShowsFetched == 1) ? '' : 's'; ?></span>
@@ -514,8 +549,8 @@ if (isset($_GET['debug'])) {
 
 <hr class="footer-divider">
 <footer class="site-footer">
-    <p>Designed, idea, coded &amp; vibe coded by great_vc - 2026<br>
-    No AI was harmed during this, except from Fuck you Gemini you cannot even distinguish &lt;body&gt; from &lt;script&gt;</p>
+    <p>Idea, design, coded &amp; vibe coded by great_vc -&nbsp;&nbsp;<span class="version-tag">🏷️<?php echo htmlspecialchars($TraktVersion); ?></span><br>
+    No AI was harmed during this, except from Fuck you Gemini cannot distinguish &lt;body&gt; from &lt;script&gt;</p>
 </footer>
 
 <script>
