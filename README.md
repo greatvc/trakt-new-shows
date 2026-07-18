@@ -1,9 +1,9 @@
 <p align="center">
-  <img src="images/tvbanner.png" width="320" alt="Trakt New Shows banner">
+  <img src="images/tvbanner.png" width="280" alt="Trakt New Shows banner">
 </p>
 
 <p align="center">
-  <img src="images/title-banner.svg" width="420" alt="Trakt New Shows">
+  <img src="images/title-banner.svg" width="440" alt="Trakt New Shows">
 </p>
 
 <p align="center">
