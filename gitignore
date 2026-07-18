@@ -1,0 +1,9 @@
+# Never commit real credentials
+config.php
+
+# Local state data saved by the app (per-user watch history etc.)
+data/
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
