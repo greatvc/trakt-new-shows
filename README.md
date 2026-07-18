@@ -1,4 +1,4 @@
-![Trakt New Shows banner](images/tvbanner.png)
+![Trakt New Shows banner](./images/tvbanner.png)
 
 <h1 align="center">Trakt New Shows</h1>
 
