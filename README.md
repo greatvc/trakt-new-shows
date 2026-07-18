@@ -1,13 +1,13 @@
 <p align="center">
-  <img src="images/tvbanner.png" width="480" alt="Trakt New Shows banner">
+  <img src="images/tvbanner.png" width="320" alt="Trakt New Shows banner">
 </p>
 
 <p align="center">
-  <img src="images/title-banner.svg" width="500" alt="Trakt New Shows">
+  <img src="images/title-banner.svg" width="420" alt="Trakt New Shows">
 </p>
 
 <p align="center">
-  A self-hosted PHP page that shows you every new TV show premiering in a given month — something Trakt's official site stopped offering after its <a href="https://forums.trakt.tv/t/new-trakt-feedback/84794/836">V3 redesign</a>.
+  A self-hosted PHP page that shows you every new TV show premiering in a given month — something Trakt's official site stopped offering after its <a href="https://forums.trakt.tv/t/new-trakt-feedback/84794/" target="_blank">V3 redesign</a>.
 </p>
 
 <p align="center">
