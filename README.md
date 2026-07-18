@@ -3,7 +3,7 @@
 <h1 align="center">Trakt New Shows</h1>
 
 <p align="center">
-  A self-hosted PHP page that shows you every new TV show premiering in a given month — something Trakt's official site stopped offering after its <a href="https://forums.trakt.tv/t/new-trakt-feedback/84794/836">V3 redesign</a>.
+  A self-hosted PHP page that shows you every new TV show premiering in a given month — something Trakt's official site stopped offering after its <a href="https://forums.trakt.tv/t/new-trakt-feedback/84794" target="_blank">V3 redesign</a>.
 </p>
 
 <p align="center">
