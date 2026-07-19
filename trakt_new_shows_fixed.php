@@ -2,7 +2,7 @@
 // ============================================================================
 // VERSION - bump this manually with each release. Shown in the footer.
 // ============================================================================
-$TraktVersion = 'v1.0.1';
+$TraktVersion = 'v1.0.2';
 
 date_default_timezone_set('Europe/Athens');
 
@@ -159,7 +159,7 @@ if (isset($_GET['api']) && $_GET['api'] === 'state') {
     exit;
 }
 
-$TraktDays  = (int)date('t', strtotime(sprintf("%04d-%02d-01", $TraktYear, $TraktMonth)));           
+$TraktDays  = (int)date('t', strtotime(sprintf("%04d-%02d-01", $TraktYear, $TraktMonth)));
 
 // Trakt API credentials live in config.php (NOT committed to git - see config.example.php).
 $configFile = __DIR__ . '/config.php';
@@ -186,9 +186,11 @@ $TraktNetworkFilter = [
 ];
 */
 
-$TraktLogoTop    = '/images/trakttop.png';
-$TraktLogoButton = '/images/traktlogo.png';
-$TraktNoPoster   = '/images/nopostertv.png';
+// Served locally from the images/ folder instead of Backblaze, to avoid burning
+// B2 bandwidth credits on every page load (these logos never change).
+$TraktLogoTop    = 'images/trakttop.png';
+$TraktLogoButton = 'images/traktlogo.png';
+$TraktNoPoster   = 'images/nopostertv.png';
 // ===================================================================================
 
 $startDate = sprintf("%04d-%02d-01", $TraktYear, $TraktMonth);
@@ -266,34 +268,6 @@ foreach ($shows as $item) {
 }
 
 $totalShowsFetched = count($shows);
-
-// ============================================================================
-// TEMPORARY DEBUG - remove once the boundary issue is confirmed fixed
-// Prints raw (UTC) vs local first_aired for every show, plus whether it
-// passed/failed the date-range filter, so we can see exactly what Trakt sent.
-// ============================================================================
-if (isset($_GET['debug'])) {
-    echo "<pre style='background:#111;color:#0f0;padding:20px;font-size:12px;'>";
-    echo "Configured range: {$startDate} to {$endDate}\n\n";
-    $debugAll = json_decode($response, true) ?? [];
-    foreach ($debugAll as $item) {
-        $raw = $item['first_aired'] ?? '(missing)';
-        $title = $item['show']['title'] ?? '(unknown)';
-        try {
-            $ld = new DateTime($item['first_aired']);
-            $ld->setTimezone(new DateTimeZone(date_default_timezone_get()));
-            $local = $ld->format('Y-m-d H:i');
-            $localDateOnly = $ld->format('Y-m-d');
-            $inRange = ($localDateOnly >= $startDate && $localDateOnly <= $endDate) ? 'PASS' : 'FILTERED OUT';
-        } catch (Exception $e) {
-            $local = 'PARSE ERROR: ' . $e->getMessage();
-            $inRange = 'ERROR';
-        }
-        echo str_pad($title, 40) . " | raw: " . str_pad($raw, 26) . " | local: " . str_pad($local, 18) . " | {$inRange}\n";
-    }
-    echo "</pre>";
-    exit;
-}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -301,7 +275,7 @@ if (isset($_GET['debug'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
    <title>New Shows &ndash; <?php echo htmlspecialchars($monthLabel); ?></title>
-	<link rel="shortcut icon" href="/images/favicon.ico">
+	<link rel="shortcut icon" href="images/favicon.ico">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;700&display=swap" rel="stylesheet">
@@ -426,11 +400,11 @@ if (isset($_GET['debug'])) {
         <img class="brand-logo" src="<?php echo htmlspecialchars($TraktLogoTop); ?>" alt="Trakt">
         <div class="month-nav">
             <a class="month-nav-btn prev" href="?month=<?php echo $prevMonth; ?>&amp;year=<?php echo $prevYear; ?>" title="Previous month" aria-label="Previous month">
-                <img src="/images/arrow-left.png" alt="Previous month">
+                <img src="images/arrow-left.png" alt="Previous month">
             </a>
             <h1>New Shows &mdash; <?php echo htmlspecialchars($monthLabel); ?></h1>
             <a class="month-nav-btn next" href="?month=<?php echo $nextMonth; ?>&amp;year=<?php echo $nextYear; ?>" title="Next month" aria-label="Next month">
-                <img src="/images/arrow-right.png" alt="Next month">
+                <img src="images/arrow-right.png" alt="Next month">
             </a>
         </div>
     </div>
@@ -549,7 +523,7 @@ if (isset($_GET['debug'])) {
 
 <hr class="footer-divider">
 <footer class="site-footer">
-    <p>Idea, design, coded &amp; vibe coded by great_vc -&nbsp;&nbsp;<span class="version-tag">🏷️<?php echo htmlspecialchars($TraktVersion); ?></span><br>
+    <p>Idea, design, coded &amp; vibe coded by great_vc -&nbsp;&nbsp;&nbsp;<span class="version-tag"> 🏷️ &nbsp;<?php echo htmlspecialchars($TraktVersion); ?></span><br>
     No AI was harmed during this, except from Fuck you Gemini cannot distinguish &lt;body&gt; from &lt;script&gt;</p>
 </footer>
 
