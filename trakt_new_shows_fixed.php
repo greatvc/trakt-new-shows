@@ -2,7 +2,7 @@
 // ============================================================================
 // VERSION - bump this manually with each release. Shown in the footer.
 // ============================================================================
-$TraktVersion = 'v1.0.2';
+$TraktVersion = 'v1.1.0';
 
 date_default_timezone_set('Europe/Athens');
 
@@ -136,6 +136,7 @@ if (isset($_GET['api']) && $_GET['api'] === 'state') {
                 'notWatching' => array_values($input['notWatching'] ?? []),
                 'history'     => array_values($input['history'] ?? []),
                 'lastCount'   => isset($input['lastCount']) ? (int)$input['lastCount'] : null,
+                'lastShowIds' => array_values($input['lastShowIds'] ?? []),
             ];
             if (@file_put_contents($stateFile, json_encode($toSave, JSON_PRETTY_PRINT)) === false) {
                 http_response_code(500);
@@ -154,7 +155,7 @@ if (isset($_GET['api']) && $_GET['api'] === 'state') {
     if (file_exists($stateFile)) {
         echo file_get_contents($stateFile);
     } else {
-        echo json_encode(['notWatching' => [], 'history' => [], 'lastCount' => null]);
+        echo json_encode(['notWatching' => [], 'history' => [], 'lastCount' => null, 'lastShowIds' => null]);
     }
     exit;
 }
@@ -361,6 +362,10 @@ $totalShowsFetched = count($shows);
         .card.not-watching .ribbon-wrap { display: block; }
         .ribbon-wrap .ribbon-text { position: absolute; top: 34px; left: -46px; width: 220px; transform: rotate(-45deg); background: var(--crimson); color: #fff; text-align: center; font-size: 0.7rem; font-weight: 800; padding: 6px 0; box-shadow: 0 2px 6px rgba(0,0,0,0.45); }
         
+        .new-badge { display: none; position: absolute; top: 10px; left: 10px; z-index: 5; background: #22c55e; color: #052e13; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.3px; padding: 4px 9px; border-radius: 8px; box-shadow: 0 2px 8px rgba(34,197,94,0.45); }
+        .card.is-new .new-badge { display: block; }
+        .card.not-watching .new-badge { display: none; }
+        
         .rating-badge { position: absolute; top: 10px; right: 10px; z-index: 5; background: rgba(10,12,16,0.78); border: 1px solid rgba(232,181,69,0.5); color: var(--gold-soft); font-size: 0.78rem; font-weight: 700; padding: 4px 8px; border-radius: 8px; backdrop-filter: blur(4px); }
         
         .watch-toggle { position: absolute; top: 48px; right: 10px; z-index: 6; width: 30px; height: 30px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.18); background: rgba(10,12,16,0.78); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all .18s ease; padding: 0; }
@@ -479,6 +484,7 @@ $totalShowsFetched = count($shows);
                     <div class="card" data-id="<?php echo htmlspecialchars($traktSlug); ?>">
                         <div class="poster-wrap">
                             <div class="ribbon-wrap"><div class="ribbon-text">NOT WATCHING</div></div>
+                            <div class="new-badge">✨ NEW SHOW</div>
                             <?php if ($rating): ?>
                                 <div class="rating-badge">⭐ <?php echo $rating; ?></div>
                             <?php endif; ?>
@@ -523,7 +529,7 @@ $totalShowsFetched = count($shows);
 
 <hr class="footer-divider">
 <footer class="site-footer">
-    <p>Idea, design, coded &amp; vibe coded by great_vc -&nbsp;&nbsp;&nbsp;<span class="version-tag"> 🏷️ &nbsp;<?php echo htmlspecialchars($TraktVersion); ?></span><br>
+    <p>Idea, design, coded &amp; vibe coded by great_vc -&nbsp;&nbsp;&nbsp;<span class="version-tag"> 🏷️ &nbsp;&nbsp;️<?php echo htmlspecialchars($TraktVersion); ?></span><br>
     No AI was harmed during this, except from Fuck you Gemini cannot distinguish &lt;body&gt; from &lt;script&gt;</p>
 </footer>
 
@@ -537,6 +543,7 @@ const currentTotalShows = <?php echo $totalShowsFetched; ?>;
 let notWatching = new Set();
 let historyLog = [];
 let lastKnownStats = { total: null, watching: null, notWatching: null };
+let currentShowIds = [];
 
 async function loadState() {
     const res = await fetch(STATE_URL, { method: 'GET', cache: 'no-store' });
@@ -548,7 +555,8 @@ async function saveState() {
     const payload = {
         notWatching: Array.from(notWatching),
         history: historyLog,
-        lastCount: currentTotalShows
+        lastCount: currentTotalShows,
+        lastShowIds: currentShowIds
     };
     const res = await fetch(STATE_URL, {
         method: 'POST',
@@ -591,6 +599,22 @@ document.addEventListener('DOMContentLoaded', async () => {
             const id = card.getAttribute('data-id');
             setCardState(card, notWatching.has(id));
         });
+
+        // Collect this run's show IDs (used both for "new show" detection below and saved for next visit)
+        currentShowIds = Array.from(document.querySelectorAll('.card')).map(c => c.getAttribute('data-id'));
+
+        // Mark cards as "new" if they weren't present in the previously saved list.
+        // state.lastShowIds is null on the very first run ever (no previous data to compare against) -
+        // in that case we deliberately skip marking anything as new, since "everything" isn't a useful signal.
+        if (Array.isArray(state.lastShowIds)) {
+            const previousShowIds = new Set(state.lastShowIds);
+            document.querySelectorAll('.card').forEach(card => {
+                const id = card.getAttribute('data-id');
+                if (id && !previousShowIds.has(id)) {
+                    card.classList.add('is-new');
+                }
+            });
+        }
 
         // Delta tracking (did the count change since last visit?)
         const previousCount = state.lastCount;
