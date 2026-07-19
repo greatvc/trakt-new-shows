@@ -529,7 +529,7 @@ $totalShowsFetched = count($shows);
 
 <hr class="footer-divider">
 <footer class="site-footer">
-    <p>Idea, design, coded &amp; vibe coded by great_vc -&nbsp;&nbsp;&nbsp;<span class="version-tag"> 🏷️ &nbsp;&nbsp;️<?php echo htmlspecialchars($TraktVersion); ?></span><br>
+    <p>Idea, design, coded &amp; vibe coded by great_vc -&nbsp;&nbsp;&nbsp;<span class="version-tag"> 🏷️ &nbsp;&nbsp;<?php echo htmlspecialchars($TraktVersion); ?></span><br>
     No AI was harmed during this, except from Fuck you Gemini cannot distinguish &lt;body&gt; from &lt;script&gt;</p>
 </footer>
 
