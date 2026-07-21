@@ -11,3 +11,8 @@
 
 $TraktClientId    = "YOUR_TRAKT_CLIENT_ID_HERE";
 $TraktAccessToken = "YOUR_TRAKT_ACCESS_TOKEN_HERE";
+
+// Optional: enables network logo chips (Netflix/HBO/etc. logos instead of the 📡 emoji).
+// Get a free "API Read Access Token" at https://www.themoviedb.org/settings/api
+// Leave as null (or delete the line) to skip this feature - falls back to 📡 + name.
+$TmdbApiKey = "YOUR_TMDB_READ_ACCESS_TOKEN_HERE";

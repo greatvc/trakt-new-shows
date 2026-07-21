@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## 🏷️ [v1.3.0] - 2026-07-21
+
+### ✨ Added
+- 🖼️ Network logo chips (Netflix, HBO, Apple TV+, etc.) instead of the generic 📡 emoji. Looked up dynamically via TMDB using the show's own TMDB id from Trakt (not a name-based guess), and cached locally after the first fetch — so it's fast on every later view and never re-hits the TMDB API for a network it's already seen. Fully optional: without a `$TmdbApiKey` in `config.php`, chips simply fall back to `📡 Network Name` exactly as before, nothing breaks.
+
 ## 🏷️ [v1.2.0] - 2026-07-20
 
 ### ✨ Added

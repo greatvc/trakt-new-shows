@@ -2,7 +2,7 @@
 // ============================================================================
 // VERSION - bump this manually with each release. Shown in the footer.
 // ============================================================================
-$TraktVersion = 'v1.2.0';
+$TraktVersion = 'v1.3.0';
 
 date_default_timezone_set('Europe/Athens');
 
@@ -170,6 +170,14 @@ if (!file_exists($configFile)) {
 }
 require $configFile;
 
+// TMDB API key (optional) - used to fetch & locally cache network logos. Add
+// $TmdbApiKey = "your-tmdb-read-access-token"; to your config.php to enable this.
+// If it's not set, network chips simply fall back to the 📡 emoji + name, same as before -
+// nothing breaks if you skip this.
+if (!isset($TmdbApiKey)) {
+    $TmdbApiKey = null;
+}
+
 $TraktGenres    = '-animation,-anime,-children,-game-show,-home-and-garden,-music,-reality,-special-interest,-talk-show';
 // $TraktCountries = 'be,dk,fr,de,is,it,kr,mx,no,es,gb,us';
 $TraktCountries = 'ar,au,at,be,br,ca,cl,cn,co,cz,dk,fi,fr,de,gr,hk,is,in,ie,it,jp,kr,mx,nl,nz,no,pl,pt,za,es,se,ch,tr,gb,us';
@@ -235,6 +243,99 @@ $CountryFlags = [
     'gb' => ['flag' => '🇬🇧', 'name' => 'United Kingdom'],
     'us' => ['flag' => '🇺🇸', 'name' => 'United States'],
 ];
+
+// ============================================================================
+// NETWORK LOGOS (TMDB, dynamically fetched + locally cached)
+// The first time a given network is seen, its logo is downloaded from TMDB
+// (using the show's own TMDB id from Trakt, so it's the *actual* network for
+// that show, not a guess) and saved into images/networks/. Every later card
+// for the same network - this run or any future one - reads straight from
+// that local file, no repeat API calls. Networks with no logo, or when
+// TMDB lookup isn't configured/available, are remembered as "failed" in the
+// same manifest so we don't retry every page load; the card just falls back
+// to the 📡 emoji + name as before.
+// ============================================================================
+function getNetworkLogo($networkName, $tmdbShowId, $tmdbApiKey) {
+    static $manifest = null;
+    static $manifestFile = null;
+    static $manifestDirty = false;
+
+    if ($manifest === null) {
+        $dataDir = __DIR__ . '/data';
+        if (!is_dir($dataDir)) { @mkdir($dataDir, 0775, true); }
+        $manifestFile = $dataDir . '/network_logos.json';
+        $manifest = file_exists($manifestFile)
+            ? (json_decode(file_get_contents($manifestFile), true) ?? [])
+            : [];
+    }
+
+    $key = strtolower(trim($networkName));
+    if ($key === '') { return null; }
+
+    // Already resolved (either a working logo path, or a remembered failure) - no network call needed.
+    if (isset($manifest[$key])) {
+        return $manifest[$key]['file'] ?? null;
+    }
+
+    // Nothing to look up with - no TMDB key configured, or this show has no TMDB id from Trakt.
+    if (!$tmdbApiKey || !$tmdbShowId) {
+        return null;
+    }
+
+    $logoPath = null;
+    try {
+        $ch = curl_init("https://api.themoviedb.org/3/tv/{$tmdbShowId}?language=en-US");
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            "Authorization: Bearer {$tmdbApiKey}",
+            "accept: application/json",
+        ]);
+        $response = curl_exec($ch);
+        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($httpcode === 200 && $response) {
+            $details = json_decode($response, true);
+            $networks = $details['networks'] ?? [];
+
+            // Prefer an exact (normalized) name match; fall back to the only network if there's just one.
+            $targetNorm = preg_replace('/[^a-z0-9]/', '', strtolower($networkName));
+            $matched = null;
+            foreach ($networks as $n) {
+                $norm = preg_replace('/[^a-z0-9]/', '', strtolower($n['name'] ?? ''));
+                if ($norm === $targetNorm) { $matched = $n; break; }
+            }
+            if (!$matched && count($networks) === 1) {
+                $matched = $networks[0];
+            }
+
+            if ($matched && !empty($matched['logo_path'])) {
+                $ext = pathinfo($matched['logo_path'], PATHINFO_EXTENSION) ?: 'png';
+                $safeName = preg_replace('/[^a-z0-9]+/', '-', strtolower($networkName));
+                $safeName = trim($safeName, '-');
+                $logosDir = __DIR__ . '/images/networks';
+                if (!is_dir($logosDir)) { @mkdir($logosDir, 0775, true); }
+                $destFile = "{$logosDir}/{$safeName}.{$ext}";
+                $relativePath = "images/networks/{$safeName}.{$ext}";
+
+                $imgData = @file_get_contents("https://image.tmdb.org/t/p/original{$matched['logo_path']}");
+                if ($imgData !== false && @file_put_contents($destFile, $imgData) !== false) {
+                    $logoPath = $relativePath;
+                }
+            }
+        }
+    } catch (Exception $e) {
+        // Swallow errors - a missing logo is not worth breaking the page over, just falls back below.
+    }
+
+    // Remember the result either way (including failure), so we never re-hit TMDB for this network again.
+    $manifest[$key] = ['file' => $logoPath];
+    $manifestDirty = true;
+    @file_put_contents($manifestFile, json_encode($manifest, JSON_PRETTY_PRINT));
+
+    return $logoPath;
+}
 
 $startDate = sprintf("%04d-%02d-01", $TraktYear, $TraktMonth);
 $endDate   = date('Y-m-t', strtotime($startDate)); // last calendar day of the configured month
@@ -421,6 +522,8 @@ $totalShowsFetched = count($shows);
         .meta-row { display: flex; flex-wrap: wrap; gap: 6px; font-size: 0.74rem; }
         .chip { background: rgba(255,255,255,0.05); border: 1px solid var(--card-border); color: var(--text-dim); padding: 3px 9px; border-radius: 999px; }
         .chip.network { color: var(--accent-blue); border-color: rgba(79,163,224,0.35); }
+        .chip.network-logo { background: rgba(154,162,177,0.92); border-color: rgba(255,255,255,0.12); padding: 4px 10px; display: flex; align-items: center; height: 26px; }
+        .chip.network-logo img { height: 16px; width: auto; max-width: 90px; object-fit: contain; display: block; }
         .chip.country { color: var(--gold-soft); border-color: rgba(232,181,69,0.3); }
         
         .overview { color: var(--text-dim); font-size: 0.82rem; line-height: 1.45; flex: 1; }
@@ -502,6 +605,8 @@ $totalShowsFetched = count($shows);
                         $title = htmlspecialchars($show['title'] ?? '');
                         $year = $show['year'] ?? '';
                         $network = htmlspecialchars($show['network'] ?? '');
+                        $tmdbShowId = $show['ids']['tmdb'] ?? null;
+                        $networkLogo = $network ? getNetworkLogo($show['network'], $tmdbShowId, $TmdbApiKey) : null;
                         $countryCode = strtolower($show['country'] ?? '');
                         $country = htmlspecialchars(strtoupper($countryCode));
                         $countryFlag = $CountryFlags[$countryCode]['flag'] ?? null;
@@ -546,7 +651,11 @@ $totalShowsFetched = count($shows);
                                 <?php if ($year): ?><div class="show-year"><?php echo $year; ?></div><?php endif; ?>
                             </div>
                             <div class="meta-row">
-                                <?php if ($network): ?><span class="chip network">📡 <?php echo $network; ?></span><?php endif; ?>
+                                <?php if ($networkLogo): ?>
+                                    <span class="chip network-logo" title="<?php echo $network; ?>"><img src="<?php echo htmlspecialchars($networkLogo); ?>" alt="<?php echo $network; ?>"></span>
+                                <?php elseif ($network): ?>
+                                    <span class="chip network">📡 <?php echo $network; ?></span>
+                                <?php endif; ?>
                                 <?php if ($countryFlag): ?>
                                     <span class="chip country" title="<?php echo htmlspecialchars($countryName ?: $country); ?>"><?php echo $countryFlag; ?></span>
                                 <?php elseif ($countryName): ?>

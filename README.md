@@ -1,24 +1,20 @@
 <p align="center">
-  <img src="images/tvbanner.png" width="280" alt="Trakt New Shows banner">
+  <img src="images/tvbanner.png" width="320" alt="Trakt New Shows banner">
 </p>
 
 <p align="center">
-  <img src="images/title-banner.svg" width="440" alt="Trakt New Shows">
+  <img src="images/title-banner.svg" width="420" alt="Trakt New Shows">
 </p>
 
 <p align="center">
-  A self-hosted PHP page that shows you every new TV show premiering in a given month — something Trakt's official site stopped offering after its <a href="https://forums.trakt.tv/t/new-trakt-feedback/84794/" target="_blank">V3 redesign</a>.
+  A self-hosted PHP page that shows you every new TV show premiering in a given month — something Trakt's official site stopped offering after its <a href="https://forums.trakt.tv/t/new-trakt-feedback/84794/836">V3 redesign</a>.
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/license-MIT-e8b545.svg" alt="MIT License">
   <img src="https://img.shields.io/badge/PHP-7.4%2B-4fa3e0.svg" alt="PHP 7.4+">
 </p>
-<div align="center">
 
-https://github.com/user-attachments/assets/7619c048-f2f6-48b8-8592-92448c0cc80a
-
-</div>
 ---
 
 ## Why this exists
@@ -29,8 +25,10 @@ Trakt's V3 redesign removed the ability to simply browse "what new shows are pre
 
 - 📅 Browse new show premieres for any month/year (works on any Trakt account)
 - 🎬 Grouped by day, with posters, ratings, genres, network & country
+- 📡 Country flags and network logos (Netflix, HBO, Apple TV+, etc.) on each card, with graceful emoji/text fallback when unavailable
 - ✅ Mark shows as "watching" / "not watching" — synced server-side, so it follows you across devices
 - 📈 Tracks premiere counts over time and shows the change since your last visit
+- 🆕 Green "NEW SHOW" badge on premieres added since your last visit
 - 🖼️ All static assets served locally — no third-party bandwidth used on every page load
 
 ### Advanced filtering (requires Trakt VIP)
@@ -70,6 +68,14 @@ $TraktNetworkFilter = [
 A PHP array of exact network names (case-sensitive, must match Trakt's naming). Leave it as `[]` to show shows from every network. Fill it in to **only** show premieres from those specific channels/services. A large commented-out example list is included right below it in the file — uncomment and trim it to what you want.
 
 ⚠️ As noted above, genre/country/network filtering are advanced-filter features that Trakt gates behind [VIP](https://trakt.tv/vip/filtering) at the API level.
+
+### Network logos — `$TmdbApiKey` (optional)
+```php
+$TmdbApiKey = "your-tmdb-read-access-token";
+```
+Optional. Get a free "API Read Access Token" at [themoviedb.org/settings/api](https://www.themoviedb.org/settings/api). When set, each show's network chip shows the actual brand logo (Netflix, HBO, Apple TV+, etc.) instead of the 📡 emoji — fetched once per network via TMDB and cached locally in `images/networks/` from then on. Leave it unset to skip this entirely; chips just fall back to `📡 Network Name` as before.
+
+## Setup
 
 1. Clone or download this repository to your PHP-capable web server
 2. Copy `config.example.php` to `config.php` and add your own Trakt API credentials (get them at [trakt.tv/oauth/applications](https://trakt.tv/oauth/applications))

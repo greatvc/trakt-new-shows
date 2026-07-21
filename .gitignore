@@ -4,6 +4,11 @@ config.php
 # Local state data saved by the app (per-user watch history etc.)
 data/
 
+# Network logos auto-downloaded from TMDB at runtime - these are copyrighted brand
+# assets (Netflix, HBO, etc. trademarks), so they shouldn't be redistributed via a
+# public GitHub repo. Each install fetches its own copy on first use instead.
+images/networks/
+
 # OS / editor junk
 .DS_Store
 Thumbs.db
