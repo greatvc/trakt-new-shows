@@ -2,6 +2,16 @@
 
 All notable changes to this project are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## 🏷️ [v1.2.0] - 2026-07-20
+
+### ✨ Added
+- 🖼️ Custom "No Shows Found" illustration on the empty state, replacing the generic 🕵️ emoji.
+- 🏳️ Flag emoji for each show's country chip, replacing the generic 🌍 globe icon — covers all 35 countries in `$TraktCountries`, with hover tooltip showing the full country name. Falls back to full name (with 🌍) or raw code (with 🌍) if a flag is ever unavailable for a given code.
+
+### 🛠️ Changed
+- 🔢 The premieres chip now reads "No Shows" instead of "0 premieres" when a month has no matches; unchanged for 1+ results.
+- 💬 Empty state message updated to "No new shows matched your filters for this month."
+
 ## 🏷️ [v1.1.0] - 2026-07-19
 
 ### ✨ Added

@@ -2,7 +2,7 @@
 // ============================================================================
 // VERSION - bump this manually with each release. Shown in the footer.
 // ============================================================================
-$TraktVersion = 'v1.1.0';
+$TraktVersion = 'v1.2.0';
 
 date_default_timezone_set('Europe/Athens');
 
@@ -193,6 +193,48 @@ $TraktLogoTop    = 'images/trakttop.png';
 $TraktLogoButton = 'images/traktlogo.png';
 $TraktNoPoster   = 'images/nopostertv.png';
 // ===================================================================================
+
+// Flag emoji + full country name per ISO code, used on each show card instead of a
+// generic 🌍 globe icon. Covers every code in $TraktCountries above. If a show ever
+// comes back with a country code that isn't in this list (flag unavailable), the
+// card falls back to showing the raw code with a 🌍 globe instead of guessing.
+$CountryFlags = [
+    'ar' => ['flag' => '🇦🇷', 'name' => 'Argentina'],
+    'au' => ['flag' => '🇦🇺', 'name' => 'Australia'],
+    'at' => ['flag' => '🇦🇹', 'name' => 'Austria'],
+    'be' => ['flag' => '🇧🇪', 'name' => 'Belgium'],
+    'br' => ['flag' => '🇧🇷', 'name' => 'Brazil'],
+    'ca' => ['flag' => '🇨🇦', 'name' => 'Canada'],
+    'cl' => ['flag' => '🇨🇱', 'name' => 'Chile'],
+    'cn' => ['flag' => '🇨🇳', 'name' => 'China'],
+    'co' => ['flag' => '🇨🇴', 'name' => 'Colombia'],
+    'cz' => ['flag' => '🇨🇿', 'name' => 'Czechia'],
+    'dk' => ['flag' => '🇩🇰', 'name' => 'Denmark'],
+    'fi' => ['flag' => '🇫🇮', 'name' => 'Finland'],
+    'fr' => ['flag' => '🇫🇷', 'name' => 'France'],
+    'de' => ['flag' => '🇩🇪', 'name' => 'Germany'],
+    'gr' => ['flag' => '🇬🇷', 'name' => 'Greece'],
+    'hk' => ['flag' => '🇭🇰', 'name' => 'Hong Kong'],
+    'is' => ['flag' => '🇮🇸', 'name' => 'Iceland'],
+    'in' => ['flag' => '🇮🇳', 'name' => 'India'],
+    'ie' => ['flag' => '🇮🇪', 'name' => 'Ireland'],
+    'it' => ['flag' => '🇮🇹', 'name' => 'Italy'],
+    'jp' => ['flag' => '🇯🇵', 'name' => 'Japan'],
+    'kr' => ['flag' => '🇰🇷', 'name' => 'South Korea'],
+    'mx' => ['flag' => '🇲🇽', 'name' => 'Mexico'],
+    'nl' => ['flag' => '🇳🇱', 'name' => 'Netherlands'],
+    'nz' => ['flag' => '🇳🇿', 'name' => 'New Zealand'],
+    'no' => ['flag' => '🇳🇴', 'name' => 'Norway'],
+    'pl' => ['flag' => '🇵🇱', 'name' => 'Poland'],
+    'pt' => ['flag' => '🇵🇹', 'name' => 'Portugal'],
+    'za' => ['flag' => '🇿🇦', 'name' => 'South Africa'],
+    'es' => ['flag' => '🇪🇸', 'name' => 'Spain'],
+    'se' => ['flag' => '🇸🇪', 'name' => 'Sweden'],
+    'ch' => ['flag' => '🇨🇭', 'name' => 'Switzerland'],
+    'tr' => ['flag' => '🇹🇷', 'name' => 'Turkey'],
+    'gb' => ['flag' => '🇬🇧', 'name' => 'United Kingdom'],
+    'us' => ['flag' => '🇺🇸', 'name' => 'United States'],
+];
 
 $startDate = sprintf("%04d-%02d-01", $TraktYear, $TraktMonth);
 $endDate   = date('Y-m-t', strtotime($startDate)); // last calendar day of the configured month
@@ -390,7 +432,7 @@ $totalShowsFetched = count($shows);
         .trakt-btn:hover { background: var(--gold); box-shadow: 0 0 14px rgba(232,181,69,0.5); transform: translateY(-2px); }
         
         .empty-state { text-align: center; padding: 100px 20px; color: var(--text-faint); }
-        .empty-state .emoji { font-size: 3rem; margin-bottom: 14px; }
+        .empty-state img.empty-icon { display: block; margin: 0 auto 20px auto; width: 180px; height: auto; }
 
         .footer-divider { border: 0; border-top: 1px solid var(--card-border); margin: 56px 6vw 0 6vw; }
         .site-footer { text-align: center; padding: 22px 6vw 36px 6vw; }
@@ -414,7 +456,7 @@ $totalShowsFetched = count($shows);
         </div>
     </div>
     <div class="sub">
-        <span>📊 <?php echo $totalShowsFetched; ?> premiere<?php echo ($totalShowsFetched == 1) ? '' : 's'; ?></span>
+        <span>📊 <?php echo ($totalShowsFetched === 0) ? 'No Shows' : $totalShowsFetched . ' premiere' . (($totalShowsFetched == 1) ? '' : 's'); ?></span>
         <?php if (!empty($TraktNetworkFilter)): ?>
             <span class="networks-chip">📡 Networks: <?php echo htmlspecialchars(implode(', ', $TraktNetworkFilter)); ?></span>
         <?php endif; ?>
@@ -441,8 +483,8 @@ $totalShowsFetched = count($shows);
 <main>
     <?php if (empty($groupedByDay)): ?>
         <div class="empty-state">
-            <div class="emoji">🕵️</div>
-            <div>No new show premieres matched your filters for this range.</div>
+            <img class="empty-icon" src="images/noshows.png" alt="No shows found">
+            <div>No new shows matched your filters for this month.</div>
         </div>
     <?php else: ?>
         <?php foreach ($groupedByDay as $date => $dayShows): 
@@ -460,7 +502,10 @@ $totalShowsFetched = count($shows);
                         $title = htmlspecialchars($show['title'] ?? '');
                         $year = $show['year'] ?? '';
                         $network = htmlspecialchars($show['network'] ?? '');
-                        $country = htmlspecialchars(strtoupper($show['country'] ?? ''));
+                        $countryCode = strtolower($show['country'] ?? '');
+                        $country = htmlspecialchars(strtoupper($countryCode));
+                        $countryFlag = $CountryFlags[$countryCode]['flag'] ?? null;
+                        $countryName = $CountryFlags[$countryCode]['name'] ?? null;
                         $rating = isset($show['rating']) ? round((float)$show['rating'], 1) : null;
                         
                         $overview = htmlspecialchars($show['overview'] ?? '');
@@ -502,7 +547,13 @@ $totalShowsFetched = count($shows);
                             </div>
                             <div class="meta-row">
                                 <?php if ($network): ?><span class="chip network">📡 <?php echo $network; ?></span><?php endif; ?>
-                                <?php if ($country): ?><span class="chip country">🌍 <?php echo $country; ?></span><?php endif; ?>
+                                <?php if ($countryFlag): ?>
+                                    <span class="chip country" title="<?php echo htmlspecialchars($countryName ?: $country); ?>"><?php echo $countryFlag; ?></span>
+                                <?php elseif ($countryName): ?>
+                                    <span class="chip country">🌍 <?php echo htmlspecialchars($countryName); ?></span>
+                                <?php elseif ($country): ?>
+                                    <span class="chip country">🌍 <?php echo $country; ?></span>
+                                <?php endif; ?>
                                 <?php 
                                 if (isset($show['genres'])) {
                                     foreach ($show['genres'] as $g) {
