@@ -17,6 +17,14 @@
 
 ---
 
+<div align="center">
+
+https://github.com/user-attachments/assets/7619c048-f2f6-48b8-8592-92448c0cc80a
+
+</div>
+
+---
+
 ## Why this exists
 
 Trakt's V3 redesign removed the ability to simply browse "what new shows are premiering this month." This tool brings that back: pick a month, and see every new show premiere, grouped by day, with posters, ratings, genres, and network info.
