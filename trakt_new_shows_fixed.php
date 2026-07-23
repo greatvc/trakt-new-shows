@@ -789,7 +789,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 deltaMsgElement.textContent = `📉 (-${diff} shows since last run)`;
                 deltaMsgElement.style.color = '#f87171';
             } else {
-                deltaMsgElement.textContent = `✅ Perfect Match`;
+                deltaMsgElement.textContent = `✅ Shows Matched`;
                 deltaMsgElement.style.color = '#a1a1aa';
             }
         } else {
