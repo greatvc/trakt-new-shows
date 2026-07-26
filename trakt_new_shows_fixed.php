@@ -2,7 +2,7 @@
 // ============================================================================
 // VERSION - bump this manually with each release. Shown in the footer.
 // ============================================================================
-$TraktVersion = 'v1.3.0';
+$TraktVersion = 'v1.3.1';
 
 date_default_timezone_set('Europe/Athens');
 
@@ -782,18 +782,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (previousCount !== null && previousCount !== undefined) {
             if (currentTotalShows > previousCount) {
                 const diff = currentTotalShows - previousCount;
-                deltaMsgElement.textContent = `📈 (+${diff} shows since last run)`;
+                deltaMsgElement.textContent = `📈 ${diff} show${diff === 1 ? '' : 's'} joined the lineup`;
                 deltaMsgElement.style.color = '#34d399';
             } else if (currentTotalShows < previousCount) {
                 const diff = previousCount - currentTotalShows;
-                deltaMsgElement.textContent = `📉 (-${diff} shows since last run)`;
+                deltaMsgElement.textContent = `📉 ${diff} show${diff === 1 ? '' : 's'} dropped off`;
                 deltaMsgElement.style.color = '#f87171';
             } else {
                 deltaMsgElement.textContent = `✅ Shows Matched`;
                 deltaMsgElement.style.color = '#a1a1aa';
             }
         } else {
-            deltaMsgElement.textContent = `(Initial Tracking)`;
+            deltaMsgElement.textContent = `🕵️ First look this month`;
         }
 
         updateStats();

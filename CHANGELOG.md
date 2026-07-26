@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## 🏷️ [v1.3.1] - 2026-07-27
+
+### 🛠️ Changed
+- 🎨 Several visual and text changes.
+
 ## 🏷️ [v1.3.0] - 2026-07-21
 
 ### ✨ Added
