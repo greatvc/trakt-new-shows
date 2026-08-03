@@ -98,3 +98,4 @@ Optional. Get a free "API Read Access Token" at [themoviedb.org/settings/api](ht
 ## License
 
 Released under the [MIT License](LICENSE).
+
