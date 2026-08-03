@@ -2,6 +2,21 @@
 
 All notable changes to this project are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## 🏷️ [v2.1.0] - 2026-08-02
+
+### 🛠️ Changed
+- 🔓 Removed the Trakt OAuth access token requirement entirely. After extensive live testing — deliberately supplying an invalid token, and cross-checking a different calendar month to rule out caching — it's confirmed that the `/calendars/all/` endpoint this script uses (including genre, country, and network filtering) works correctly with just the Client ID (`trakt-api-key` header). No access token, no OAuth device/authorization flow, and no VIP subscription are needed for anything this script does. This contradicts the general "advanced filtering requires VIP" guidance in Trakt's docs, which appears to describe the trakt.tv website's own calendar UI rather than this specific public API endpoint.
+- 📄 `config.example.php` now only asks for `$TraktClientId`. Existing `config.php` files with a leftover `$TraktAccessToken` line are unaffected — it's just no longer read anywhere, nothing to change on your end.
+- 📖 README simplified accordingly: removed the Device Code Flow token setup guide and the "requires VIP" warning, replaced with a short note on how this was confirmed.
+
+## 🏷️ [v2.0.0] - 2026-07-28
+
+### 💥 Breaking
+- 📛 Renamed the main script from `trakt_new_shows_fixed.php` to `trakt.php`. If you have this bookmarked or scheduled somewhere, update the URL/path after updating — the old filename will 404. Versioning going forward is handled by git tags/releases and this CHANGELOG, so the `_fixed` suffix (and the rest of the old descriptive name) from earlier iterations no longer made sense to keep.
+
+### ✨ Added
+- 📖 New README section on obtaining a Trakt access token via the Device Code Flow, including a note that Trakt access tokens expire after 7 days and need to be regenerated periodically (credit: feedback from a Reddit user on r/trakt).
+
 ## 🏷️ [v1.3.1] - 2026-07-27
 
 ### 🛠️ Changed

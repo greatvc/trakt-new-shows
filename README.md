@@ -39,19 +39,17 @@ Trakt's V3 redesign removed the ability to simply browse "what new shows are pre
 - 🆕 Green "NEW SHOW" badge on premieres added since your last visit
 - 🖼️ All static assets served locally — no third-party bandwidth used on every page load
 
-### Advanced filtering (requires Trakt VIP)
+### Filtering by genre, country, and network
 
-Trakt gates advanced calendar filtering — by genre, country, and network — behind a [VIP subscription](https://trakt.tv/vip/filtering). This script supports all three:
+This script supports all three, purely via query parameters / local filtering — no VIP subscription or OAuth needed (see [Configuration](#configuration) below, and the note at the bottom of this README on how we confirmed this):
 
 - 🌍 Choose which countries' shows to include (or exclude)
 - 🎭 Filter out genres you don't care about (e.g. reality, talk shows, anime)
 - 📡 Optionally restrict results to specific networks/channels only (e.g. just Netflix, HBO, Apple TV+)
 
-If your Trakt account isn't VIP, these filters may be silently ignored by the API. The unfiltered calendar (all new shows for the month) works on any account.
-
 ## Configuration
 
-All filtering is controlled by three PHP variables near the top of `trakt_new_shows_fixed.php` (in the `USER CONFIGURATION` section, around line 155):
+All filtering is controlled by three PHP variables near the top of `trakt.php` (in the `USER CONFIGURATION` section, around line 155):
 
 ### Genres — `$TraktGenres`
 ```php
@@ -75,8 +73,6 @@ $TraktNetworkFilter = [
 ```
 A PHP array of exact network names (case-sensitive, must match Trakt's naming). Leave it as `[]` to show shows from every network. Fill it in to **only** show premieres from those specific channels/services. A large commented-out example list is included right below it in the file — uncomment and trim it to what you want.
 
-⚠️ As noted above, genre/country/network filtering are advanced-filter features that Trakt gates behind [VIP](https://trakt.tv/vip/filtering) at the API level.
-
 ### Network logos — `$TmdbApiKey` (optional)
 ```php
 $TmdbApiKey = "your-tmdb-read-access-token";
@@ -86,16 +82,18 @@ Optional. Get a free "API Read Access Token" at [themoviedb.org/settings/api](ht
 ## Setup
 
 1. Clone or download this repository to your PHP-capable web server
-2. Copy `config.example.php` to `config.php` and add your own Trakt API credentials (get them at [trakt.tv/oauth/applications](https://trakt.tv/oauth/applications))
+2. Copy `config.example.php` to `config.php` and set `$TraktClientId` — get one at [app.trakt.tv/settings/apps/api](https://app.trakt.tv/settings/apps/api) (create an app there if needed; no OAuth authorization step needed, just the Client ID)
 3. Make sure the `data/` folder is writable by the web server (it stores your watch-status per month)
-4. Visit `yoursite.com/trakt_new_shows_fixed.php?month=7`
+4. Visit `yoursite.com/trakt.php?month=7`
 
-`config.php` is git-ignored and will never be committed — your credentials stay local to your server.
+`config.php` is git-ignored and will never be committed — your Client ID stays local to your server.
+
+> **Note on authentication:** earlier versions of this README asked for a Trakt OAuth access token as well, following the API docs' general guidance. After extensive live testing (including deliberately supplying an invalid/garbage token and cross-checking against a different calendar month to rule out caching), it turned out the `/calendars/all/` endpoint this script uses — including genre, country, and network filtering — works correctly with just the Client ID. No access token, no OAuth flow, no VIP subscription required. If a future version of this script ever needs personalized/VIP-gated data, an access token setup guide will be added back at that point.
 
 ## Requirements
 
 - PHP 7.4+ with cURL enabled
-- A free [Trakt API](https://trakt.tv/oauth/applications) application (Client ID + Access Token)
+- A free [Trakt API](https://app.trakt.tv/settings/apps/api) application (Client ID only)
 
 ## License
 

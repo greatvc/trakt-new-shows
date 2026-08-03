@@ -2,7 +2,7 @@
 // ============================================================================
 // VERSION - bump this manually with each release. Shown in the footer.
 // ============================================================================
-$TraktVersion = 'v1.3.1';
+$TraktVersion = 'v2.1.0';
 
 date_default_timezone_set('Europe/Athens');
 
@@ -162,11 +162,13 @@ if (isset($_GET['api']) && $_GET['api'] === 'state') {
 
 $TraktDays  = (int)date('t', strtotime(sprintf("%04d-%02d-01", $TraktYear, $TraktMonth)));
 
-// Trakt API credentials live in config.php (NOT committed to git - see config.example.php).
+// Your Trakt Client ID lives in config.php (NOT committed to git - see config.example.php).
+// No OAuth access token is needed - the /calendars/all/ endpoint used below is public
+// and works with just the Client ID (trakt-api-key header). See CHANGELOG for how we confirmed this.
 $configFile = __DIR__ . '/config.php';
 if (!file_exists($configFile)) {
     http_response_code(500);
-    die('Missing config.php. Copy config.example.php to config.php and fill in your Trakt API credentials.');
+    die('Missing config.php. Copy config.example.php to config.php and fill in your Trakt Client ID.');
 }
 require $configFile;
 
@@ -350,11 +352,14 @@ if (!empty($TraktCountries)) $queryParts[] = "countries=" . urlencode($TraktCoun
 $uri = $baseUri . "?" . implode("&", $queryParts);
 
 // Fetch data via cURL
+// NOTE: /calendars/all/... is a public Trakt endpoint - confirmed via extensive live
+// testing (including deliberately sending an invalid token) that it works correctly
+// with just the trakt-api-key (Client ID), no OAuth access token needed at all -
+// genre/country filters included. See CHANGELOG for details.
 $ch = curl_init();
 curl_setopt($ch, CURLOPT_URL, $uri);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_HTTPHEADER, [
-    "Authorization: Bearer {$TraktAccessToken}",
     "trakt-api-version: 2",
     "trakt-api-key: {$TraktClientId}",
     "Content-Type: application/json",
