@@ -471,9 +471,7 @@ $totalShowsFetched = count($shows);
             background: rgba(18,21,28,0.92); border: 1px solid var(--card-border); border-radius: 12px; padding: 8px 10px;
             box-shadow: 0 14px 32px rgba(0,0,0,0.5); backdrop-filter: blur(6px);
         }
-        .sync-btn { cursor: pointer; background: rgba(255,255,255,0.05); border: 1px solid var(--card-border); color: var(--text); padding: 6px 10px; border-radius: 8px; font-size: 0.72rem; font-weight: 600; transition: all .18s ease; }
-        .sync-btn:hover { background: var(--crimson); color: #fff; border-color: var(--crimson); }
-        .sync-status { color: var(--text-dim); font-size: 0.72rem; margin-left: 5px; }
+        .sync-status { color: var(--text-dim); font-size: 0.72rem; }
 
        .stats-bar { position: fixed; bottom: 22px; right: 22px; z-index: 9999; padding: 12px 16px; background: rgba(18,21,28,0.92); border: 1px solid var(--card-border); border-radius: 12px; min-width: 200px; font-size: 0.78rem; }
         .stats-row { display: flex; justify-content: space-between; width: 100%; margin-bottom: 4px; }
@@ -600,7 +598,6 @@ $totalShowsFetched = count($shows);
 
 <div id="syncPanel" class="sync-panel">
     <span id="syncStatus" class="sync-status">🟢 Storage Connected</span>
-    <button type="button" class="sync-btn" onclick="clearData()">🗑️ Reset</button>
 </div>
 
  <div id="statsBar" class="stats-bar">
@@ -1019,30 +1016,6 @@ function updateStats() {
     notWatchingEl.textContent = actualNotWatching;
 
     lastKnownStats = { total, watching: actualWatching, notWatching: actualNotWatching };
-}
-
-async function clearData() {
-    if (!confirm("Are you sure you want to reset your watching status and count tracking for this month?")) return;
-
-    notWatching.clear();
-    historyLog = [];
-
-    document.querySelectorAll('.card').forEach(card => {
-        setCardState(card, false);
-    });
-
-    document.getElementById('deltaMsg').textContent = `(Reset successfully)`;
-    document.getElementById('historyLog').innerHTML = '';
-    updateStats();
-
-    try {
-        await saveState();
-        setSyncStatus(true);
-    } catch (e) {
-        console.error(e);
-        setSyncStatus(false, 'Save failed');
-        alert("⚠️ Warning: Reset could not be saved to the server.");
-    }
 }
 </script>
 </body>
