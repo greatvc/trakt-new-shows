@@ -473,7 +473,21 @@ $totalShowsFetched = count($shows);
         }
         .sync-status { color: var(--text-dim); font-size: 0.72rem; }
 
-       .stats-bar { position: fixed; bottom: 22px; right: 22px; z-index: 9999; padding: 12px 16px; background: rgba(18,21,28,0.92); border: 1px solid var(--card-border); border-radius: 12px; min-width: 200px; font-size: 0.78rem; }
+       .floating-bar { position: fixed; bottom: 22px; right: 22px; z-index: 9999; display: flex; align-items: flex-end; gap: 14px; }
+       .stats-bar { padding: 12px 16px; background: rgba(18,21,28,0.92); border: 1px solid var(--card-border); border-radius: 12px; min-width: 200px; font-size: 0.78rem; }
+       .back-to-top {
+            width: 52px; height: 52px; border-radius: 50%; flex-shrink: 0;
+            background: rgba(18,21,28,0.92); border: 1px solid rgba(232,181,69,0.5);
+            box-shadow: 0 10px 26px rgba(0,0,0,0.5);
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+            opacity: 0; visibility: hidden; transform: translateY(10px) scale(0.85);
+            transition: opacity .25s ease, transform .25s ease, visibility .25s ease, box-shadow .2s ease, border-color .2s ease;
+        }
+        .back-to-top.visible { opacity: 1; visibility: visible; transform: translateY(0) scale(1); }
+        .back-to-top:hover { border-color: var(--gold); box-shadow: 0 12px 30px rgba(0,0,0,0.55), 0 0 20px rgba(232,181,69,0.45); transform: translateY(-3px) scale(1.08); }
+        .back-to-top.visible:hover { transform: translateY(-3px) scale(1.08); }
+        .back-to-top:active { transform: scale(0.9); }
+        .back-to-top img { width: 30px; height: 30px; object-fit: contain; }
         .stats-row { display: flex; justify-content: space-between; width: 100%; margin-bottom: 4px; }
         .stats-row strong { color: var(--gold-soft); font-size: 0.92rem; display: inline-block; }
         @keyframes statPop {
@@ -600,7 +614,11 @@ $totalShowsFetched = count($shows);
     <span id="syncStatus" class="sync-status">🟢 Storage Connected</span>
 </div>
 
- <div id="statsBar" class="stats-bar">
+<div class="floating-bar">
+    <button type="button" id="backToTop" class="back-to-top" title="Back to top" aria-label="Back to top">
+        <img src="images/top.png" alt="Back to top">
+    </button>
+    <div id="statsBar" class="stats-bar">
         <div style="width: 100%;">
             <div class="stats-row"><span>📺 Total:</span><strong id="statTotal"><?php echo $totalShowsFetched; ?></strong></div>
             <span id="deltaMsg" class="delta-msg"></span>
@@ -610,6 +628,7 @@ $totalShowsFetched = count($shows);
         <div class="stats-row"><span>🚫 Not Watching:</span><strong id="statNotWatching">0</strong></div>
         <div id="historyLog" class="history-log"></div>
     </div>
+</div>
 
 <main>
     <?php if (empty($groupedByDay)): ?>
@@ -1017,6 +1036,21 @@ function updateStats() {
 
     lastKnownStats = { total, watching: actualWatching, notWatching: actualNotWatching };
 }
+
+// ============================================================================
+// BACK TO TOP button - appears after scrolling down a bit, stays floating
+// until you scroll back up above the threshold or click it.
+// ============================================================================
+const backToTopBtn = document.getElementById('backToTop');
+const BACK_TO_TOP_THRESHOLD = 300; // roughly 3 normal mouse-wheel scrolls
+
+window.addEventListener('scroll', () => {
+    backToTopBtn.classList.toggle('visible', window.scrollY > BACK_TO_TOP_THRESHOLD);
+}, { passive: true });
+
+backToTopBtn.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+});
 </script>
 </body>
 </html>
