@@ -2,7 +2,7 @@
 // ============================================================================
 // VERSION - bump this manually with each release. Shown in the footer.
 // ============================================================================
-$TraktVersion = 'v2.1.0';
+$TraktVersion = 'v2.2.0';
 
 date_default_timezone_set('Europe/Athens');
 
@@ -136,7 +136,7 @@ if (isset($_GET['api']) && $_GET['api'] === 'state') {
                 'notWatching' => array_values($input['notWatching'] ?? []),
                 'history'     => array_values($input['history'] ?? []),
                 'lastCount'   => isset($input['lastCount']) ? (int)$input['lastCount'] : null,
-                'lastShowIds' => array_values($input['lastShowIds'] ?? []),
+                'lastShows'   => array_values($input['lastShows'] ?? []),
             ];
             if (@file_put_contents($stateFile, json_encode($toSave, JSON_PRETTY_PRINT)) === false) {
                 http_response_code(500);
@@ -155,7 +155,7 @@ if (isset($_GET['api']) && $_GET['api'] === 'state') {
     if (file_exists($stateFile)) {
         echo file_get_contents($stateFile);
     } else {
-        echo json_encode(['notWatching' => [], 'history' => [], 'lastCount' => null, 'lastShowIds' => null]);
+        echo json_encode(['notWatching' => [], 'history' => [], 'lastCount' => null, 'lastShows' => null]);
     }
     exit;
 }
@@ -510,14 +510,40 @@ $totalShowsFetched = count($shows);
         .card.not-watching .ribbon-wrap { display: block; }
         .ribbon-wrap .ribbon-text { position: absolute; top: 34px; left: -46px; width: 220px; transform: rotate(-45deg); background: var(--crimson); color: #fff; text-align: center; font-size: 0.7rem; font-weight: 800; padding: 6px 0; box-shadow: 0 2px 6px rgba(0,0,0,0.45); }
         
-        .new-badge { display: none; position: absolute; top: 10px; left: 10px; z-index: 5; background: #22c55e; color: #052e13; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.3px; padding: 4px 9px; border-radius: 8px; box-shadow: 0 2px 8px rgba(34,197,94,0.45); }
+        @keyframes newBadgePulse {
+            0%, 100% { box-shadow: 0 3px 12px rgba(34,197,94,0.55), 0 0 0 0 rgba(74,222,128,0.55); }
+            50%      { box-shadow: 0 3px 16px rgba(34,197,94,0.8), 0 0 0 7px rgba(74,222,128,0); }
+        }
+        .new-badge {
+            display: none; position: absolute; top: 10px; left: 10px; z-index: 5;
+            background: linear-gradient(135deg, #4ade80, #16a34a);
+            color: #052e13; font-size: 0.82rem; font-weight: 800; letter-spacing: 0.3px;
+            padding: 6px 13px; border-radius: 9px;
+            animation: newBadgePulse 1.8s ease-in-out infinite;
+        }
         .card.is-new .new-badge { display: block; }
         .card.not-watching .new-badge { display: none; }
         
         .rating-badge { position: absolute; top: 10px; right: 10px; z-index: 5; background: rgba(10,12,16,0.78); border: 1px solid rgba(232,181,69,0.5); color: var(--gold-soft); font-size: 0.78rem; font-weight: 700; padding: 4px 8px; border-radius: 8px; backdrop-filter: blur(4px); }
         
         .watch-toggle { position: absolute; top: 48px; right: 10px; z-index: 6; width: 30px; height: 30px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.18); background: rgba(10,12,16,0.78); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all .18s ease; padding: 0; }
-        .watch-toggle:hover { transform: scale(1.14); background: rgba(232,181,69,0.9); }
+        .watch-toggle:hover { transform: scale(1.16); background: rgba(232,181,69,0.9); box-shadow: 0 0 16px rgba(232,181,69,0.55); }
+        .watch-toggle:active { transform: scale(0.9); }
+        .watch-toggle img { height: 14px; width: auto; max-width: 22px; object-fit: contain; transition: opacity .18s ease, filter .18s ease; }
+        .card.not-watching .watch-toggle { background: rgba(224,56,77,0.25); border-color: rgba(224,56,77,0.55); }
+        .card.not-watching .watch-toggle img { opacity: 0.5; filter: grayscale(1); }
+        .card.not-watching .watch-toggle:hover { background: rgba(232,181,69,0.95); border-color: var(--gold); box-shadow: 0 0 20px rgba(232,181,69,0.65); }
+        .card.not-watching .watch-toggle:hover img { opacity: 1; filter: none; }
+        .card.is-new .watch-toggle { display: none; }
+
+        /* New-show cards get two always-visible buttons (mark watching / mark not watching)
+           instead of the single toggle, stacked exactly where the toggle normally sits. */
+        .new-watch-actions { display: none; position: absolute; top: 48px; right: 10px; z-index: 6; flex-direction: column; align-items: center; gap: 8px; }
+        .card.is-new .new-watch-actions { display: flex; }
+        .watch-btn { width: 34px; height: 34px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.18); background: rgba(10,12,16,0.78); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all .18s ease; padding: 0; }
+        .watch-btn img { height: 16px; width: auto; max-width: 24px; object-fit: contain; }
+        .watch-btn:hover { transform: scale(1.14); background: rgba(232,181,69,0.9); box-shadow: 0 0 14px rgba(232,181,69,0.5); }
+        .watch-btn:active { transform: scale(0.88); }
         
         .card-body { padding: 14px 16px 16px 16px; display: flex; flex-direction: column; gap: 8px; flex: 1; transition: opacity .22s ease; }
         .title-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
@@ -536,7 +562,7 @@ $totalShowsFetched = count($shows);
         
         .links-row { display: flex; gap: 8px; margin-top: 8px; }
         .trakt-btn { flex: 1; display: flex; align-items: center; justify-content: center; padding: 9px 0; border-radius: 8px; border: 1px solid var(--card-border); background: rgba(255,255,255,0.03); transition: all .18s ease; }
-        .trakt-btn img { height: 16px; }
+        .trakt-btn img { height: 22px; }
         .trakt-btn:hover { background: var(--gold); box-shadow: 0 0 14px rgba(232,181,69,0.5); transform: translateY(-2px); }
         
         .empty-state { text-align: center; padding: 100px 20px; color: var(--text-faint); }
@@ -644,10 +670,18 @@ $totalShowsFetched = count($shows);
                                 <div class="rating-badge">⭐ <?php echo $rating; ?></div>
                             <?php endif; ?>
                             
-                            <button type="button" class="watch-toggle" onclick="toggleWatch(this)" title="Toggle watching">
-                                <svg class="icon-open" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                                <svg class="icon-closed" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path><circle cx="12" cy="12" r="3"></circle><line x1="2" y1="2" x2="22" y2="22"></line></svg>
+                            <button type="button" class="watch-toggle" onclick="toggleWatch(this)" title="Click to mark as not watching">
+                                <img class="icon-open" src="images/eye.png" alt="Watching">
+                                <img class="icon-closed" src="images/eyeclosed.png" alt="Not watching" style="display:none;">
                             </button>
+                            <div class="new-watch-actions">
+                                <button type="button" class="watch-btn watch-btn-eye" onclick="resolveNewShow(this, false)" title="Click to mark as watching">
+                                    <img src="images/eye.png" alt="Mark as watching">
+                                </button>
+                                <button type="button" class="watch-btn watch-btn-eyeclosed" onclick="resolveNewShow(this, true)" title="Click to mark as not watching">
+                                    <img src="images/eyeclosed.png" alt="Mark as not watching">
+                                </button>
+                            </div>
                             <img src="<?php echo htmlspecialchars($posterUrl); ?>" alt="<?php echo $title; ?> poster" loading="lazy">
                         </div>
                         <div class="card-body">
@@ -708,7 +742,8 @@ const currentTotalShows = <?php echo $totalShowsFetched; ?>;
 let notWatching = new Set();
 let historyLog = [];
 let lastKnownStats = { total: null, watching: null, notWatching: null };
-let currentShowIds = [];
+let currentShows = [];
+let remainingNewCount = 0;
 
 async function loadState() {
     const res = await fetch(STATE_URL, { method: 'GET', cache: 'no-store' });
@@ -721,7 +756,7 @@ async function saveState() {
         notWatching: Array.from(notWatching),
         history: historyLog,
         lastCount: currentTotalShows,
-        lastShowIds: currentShowIds
+        lastShows: currentShows
     };
     const res = await fetch(STATE_URL, {
         method: 'POST',
@@ -765,40 +800,87 @@ document.addEventListener('DOMContentLoaded', async () => {
             setCardState(card, notWatching.has(id));
         });
 
-        // Collect this run's show IDs (used both for "new show" detection below and saved for next visit)
-        currentShowIds = Array.from(document.querySelectorAll('.card')).map(c => c.getAttribute('data-id'));
+        // Collect this run's shows (id + title + year) - used for "new show" /
+        // "dropped off" detection below, and saved for next visit.
+        currentShows = Array.from(document.querySelectorAll('.card')).map(c => ({
+            id: c.getAttribute('data-id'),
+            title: c.querySelector('.show-title')?.textContent || '',
+            year: c.querySelector('.show-year')?.textContent || ''
+        }));
+        const currentIds = new Set(currentShows.map(s => s.id));
 
-        // Mark cards as "new" if they weren't present in the previously saved list.
-        // state.lastShowIds is null on the very first run ever (no previous data to compare against) -
-        // in that case we deliberately skip marking anything as new, since "everything" isn't a useful signal.
-        if (Array.isArray(state.lastShowIds)) {
-            const previousShowIds = new Set(state.lastShowIds);
+        // previousShows is null only on the very first run ever (no previous data
+        // to compare against) - in that case we deliberately skip "new"/"dropped"
+        // detection entirely, since "everything is new" isn't a useful signal.
+        // Falls back to the older lastShowIds format (plain id strings, no
+        // title/year) if this state file predates this feature, so upgrading
+        // doesn't wrongly flag every existing show as new on the next visit.
+        let previousShows = null;
+        if (Array.isArray(state.lastShows)) {
+            previousShows = state.lastShows;
+        } else if (Array.isArray(state.lastShowIds)) {
+            previousShows = state.lastShowIds.map(id => ({ id, title: null, year: null }));
+        }
+
+        let droppedShows = [];
+        if (previousShows) {
+            const previousIds = new Set(previousShows.map(s => s.id));
+
+            // Mark cards as "new" if they weren't present last visit.
             document.querySelectorAll('.card').forEach(card => {
                 const id = card.getAttribute('data-id');
-                if (id && !previousShowIds.has(id)) {
+                if (id && !previousIds.has(id)) {
                     card.classList.add('is-new');
+                    // If this show was marked "not watching" before it vanished and
+                    // is now reappearing, treat it as a genuinely fresh premiere -
+                    // clear the stale flag so it doesn't show a confusing mix of
+                    // "not watching" styling alongside the NEW SHOW UI.
+                    if (notWatching.has(id)) {
+                        notWatching.delete(id);
+                        setCardState(card, false);
+                    }
                 }
             });
+
+            // Shows that were present last visit but aren't in this run's calendar at all.
+            droppedShows = previousShows.filter(s => s.id && !currentIds.has(s.id));
         }
 
         // Delta tracking (did the count change since last visit?)
-        const previousCount = state.lastCount;
+        // If there are unresolved NEW SHOW cards, that counter takes over the
+        // message entirely (see renderNewShowsDelta) - it's more specific and
+        // directly tied to the actionable badges below. Otherwise, fall back
+        // to the original total-count-based message as before.
+        remainingNewCount = document.querySelectorAll('.card.is-new').length;
         const deltaMsgElement = document.getElementById('deltaMsg');
-        if (previousCount !== null && previousCount !== undefined) {
-            if (currentTotalShows > previousCount) {
-                const diff = currentTotalShows - previousCount;
-                deltaMsgElement.textContent = `📈 ${diff} show${diff === 1 ? '' : 's'} joined the lineup`;
-                deltaMsgElement.style.color = '#34d399';
-            } else if (currentTotalShows < previousCount) {
-                const diff = previousCount - currentTotalShows;
-                deltaMsgElement.textContent = `📉 ${diff} show${diff === 1 ? '' : 's'} dropped off`;
-                deltaMsgElement.style.color = '#f87171';
-            } else {
-                deltaMsgElement.textContent = `✅ Shows Matched`;
-                deltaMsgElement.style.color = '#a1a1aa';
-            }
+        deltaMsgElement.title = '';
+        deltaMsgElement.style.cursor = 'default';
+        if (remainingNewCount > 0) {
+            renderNewShowsDelta(true);
         } else {
-            deltaMsgElement.textContent = `🕵️ First look this month`;
+            const previousCount = state.lastCount;
+            if (previousCount !== null && previousCount !== undefined) {
+                if (currentTotalShows > previousCount) {
+                    const diff = currentTotalShows - previousCount;
+                    deltaMsgElement.textContent = `📈 ${diff} show${diff === 1 ? '' : 's'} joined the lineup`;
+                    deltaMsgElement.style.color = '#34d399';
+                } else if (currentTotalShows < previousCount) {
+                    const diff = previousCount - currentTotalShows;
+                    deltaMsgElement.textContent = `📉 ${diff} show${diff === 1 ? '' : 's'} dropped off`;
+                    deltaMsgElement.style.color = '#f87171';
+                    if (droppedShows.length > 0) {
+                        deltaMsgElement.title = droppedShows
+                            .map(s => `${s.title || 'Unknown show'}${s.year ? ' (' + s.year + ')' : ''}`)
+                            .join('\n');
+                        deltaMsgElement.style.cursor = 'help';
+                    }
+                } else {
+                    deltaMsgElement.textContent = `✅ Shows Matched`;
+                    deltaMsgElement.style.color = '#a1a1aa';
+                }
+            } else {
+                deltaMsgElement.textContent = `🕵️ First look this month`;
+            }
         }
 
         updateStats();
@@ -833,6 +915,7 @@ function setCardState(card, isNotWatching) {
     const btn = card.querySelector('.watch-toggle');
     btn.querySelector('.icon-open').style.display = isNotWatching ? 'none' : 'block';
     btn.querySelector('.icon-closed').style.display = isNotWatching ? 'block' : 'none';
+    btn.title = isNotWatching ? 'Click to mark as watching' : 'Click to mark as not watching';
 }
 
 async function toggleWatch(btn) {
@@ -858,6 +941,57 @@ async function toggleWatch(btn) {
         setSyncStatus(false, 'Save failed');
         alert("⚠️ Warning: Your change could not be saved to the server. Check your connection and try again.");
     }
+}
+
+// Called when one of the two dedicated buttons on a "NEW SHOW" card is clicked.
+// markAsNotWatching = false -> eye.png was clicked (mark watching)
+// markAsNotWatching = true  -> eyeclosed.png was clicked (mark not watching)
+async function resolveNewShow(btn, markAsNotWatching) {
+    const card = btn.closest('.card');
+    const id = card.getAttribute('data-id');
+
+    // Drop the "new" state - this hides the NEW SHOW badge, hides both of these
+    // buttons, and reveals the normal single watch-toggle (already showing the
+    // correct eye/eyeclosed icon once setCardState runs below).
+    card.classList.remove('is-new');
+    setCardState(card, markAsNotWatching);
+
+    if (markAsNotWatching) {
+        notWatching.add(id);
+    } else {
+        notWatching.delete(id);
+    }
+
+    updateStats();
+    decrementNewShowCount();
+
+    try {
+        await saveState();
+        setSyncStatus(true);
+    } catch (e) {
+        console.error(e);
+        setSyncStatus(false, 'Save failed');
+        alert("⚠️ Warning: Your change could not be saved to the server. Check your connection and try again.");
+    }
+}
+
+// Renders the "X shows joined the lineup" counter tied to unresolved NEW SHOW
+// cards specifically (not the raw total-count delta). pop=true also triggers
+// the boom animation - used both on first render and every decrement.
+function renderNewShowsDelta(pop) {
+    const deltaMsgElement = document.getElementById('deltaMsg');
+    if (remainingNewCount > 0) {
+        deltaMsgElement.textContent = `📈 ${remainingNewCount} show${remainingNewCount === 1 ? '' : 's'} joined the lineup`;
+        deltaMsgElement.style.color = '#34d399';
+    } else {
+        deltaMsgElement.textContent = ''; // fully resolved - leave it blank, no wording
+    }
+    if (pop) popStat(deltaMsgElement);
+}
+
+function decrementNewShowCount() {
+    remainingNewCount = Math.max(0, remainingNewCount - 1);
+    renderNewShowsDelta(true);
 }
 
 // Pops/glows a stat number when its value changes, so the change is easy to spot
