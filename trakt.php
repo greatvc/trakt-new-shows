@@ -507,7 +507,23 @@ $totalShowsFetched = count($shows);
         .day-header .day-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.9rem; color: var(--gold-soft); letter-spacing: 1px;}
         .day-header .day-count { color: var(--text-faint); font-size: 0.9rem; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 26px; }
+        .delta-row { display: flex; align-items: center; gap: 3px; }
         .delta-msg { font-size: 0.7rem; color: #a1a1aa; margin-top: 2px; display: block; }
+        .delta-help {
+            display: none; position: relative; margin-top: 2px;
+            color: #fbbf24; font-weight: 900; font-size: 0.72rem;
+            cursor: help; vertical-align: middle; line-height: 1;
+        }
+        .delta-help.visible { display: inline-block; }
+        .delta-help-box {
+            display: none; position: absolute; bottom: 135%; right: -6px; z-index: 10000;
+            background: #12151c; border: 1px solid rgba(251,191,36,0.5); border-radius: 8px;
+            padding: 8px 11px; min-width: 170px; max-width: 260px;
+            font-size: 0.7rem; font-weight: 400; color: var(--text); text-align: left;
+            white-space: pre-line; line-height: 1.5;
+            box-shadow: 0 10px 24px rgba(0,0,0,0.55);
+        }
+        .delta-help:hover .delta-help-box { display: block; }
         .card { background: var(--card); border: 1px solid var(--card-border); border-radius: 14px; overflow: hidden; position: relative; transition: all .22s ease; display: flex; flex-direction: column; }
         .card:hover { transform: translateY(-6px) scale(1.015); box-shadow: 0 18px 40px rgba(0,0,0,0.55), 0 0 0 1px rgba(232,181,69,0.35); border-color: var(--gold); }
         .card.not-watching { opacity: 0.72; border-color: rgba(224,56,77,0.5); }
@@ -621,7 +637,7 @@ $totalShowsFetched = count($shows);
     <div id="statsBar" class="stats-bar">
         <div style="width: 100%;">
             <div class="stats-row"><span>📺 Total:</span><strong id="statTotal"><?php echo $totalShowsFetched; ?></strong></div>
-            <span id="deltaMsg" class="delta-msg"></span>
+            <div class="delta-row"><span id="deltaMsg" class="delta-msg"></span><span id="deltaHelp" class="delta-help">❓<span id="deltaHelpBox" class="delta-help-box"></span></span></div>
         </div>
         <hr class="stats-divider">
         <div class="stats-row"><span>👀 Watching:</span><strong id="statWatching">0</strong></div>
@@ -686,15 +702,15 @@ $totalShowsFetched = count($shows);
                                 <div class="rating-badge">⭐ <?php echo $rating; ?></div>
                             <?php endif; ?>
                             
-                            <button type="button" class="watch-toggle" onclick="toggleWatch(this)" title="Click to mark as not watching">
+                            <button type="button" class="watch-toggle" onclick="toggleWatch(this)" title="Mark as not watching">
                                 <img class="icon-open" src="images/eye.png" alt="Watching">
                                 <img class="icon-closed" src="images/eyeclosed.png" alt="Not watching" style="display:none;">
                             </button>
                             <div class="new-watch-actions">
-                                <button type="button" class="watch-btn watch-btn-eye" onclick="resolveNewShow(this, false)" title="Click to mark as watching">
+                                <button type="button" class="watch-btn watch-btn-eye" onclick="resolveNewShow(this, false)" title="Mark as watching">
                                     <img src="images/eye.png" alt="Mark as watching">
                                 </button>
-                                <button type="button" class="watch-btn watch-btn-eyeclosed" onclick="resolveNewShow(this, true)" title="Click to mark as not watching">
+                                <button type="button" class="watch-btn watch-btn-eyeclosed" onclick="resolveNewShow(this, true)" title="Mark as not watching">
                                     <img src="images/eyeclosed.png" alt="Mark as not watching">
                                 </button>
                             </div>
@@ -869,8 +885,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         // to the original total-count-based message as before.
         remainingNewCount = document.querySelectorAll('.card.is-new').length;
         const deltaMsgElement = document.getElementById('deltaMsg');
-        deltaMsgElement.title = '';
-        deltaMsgElement.style.cursor = 'default';
+        const deltaHelpEl = document.getElementById('deltaHelp');
+        const deltaHelpBoxEl = document.getElementById('deltaHelpBox');
+        deltaHelpEl.classList.remove('visible');
+        deltaHelpBoxEl.textContent = '';
         if (remainingNewCount > 0) {
             renderNewShowsDelta(true);
         } else {
@@ -885,11 +903,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                     deltaMsgElement.textContent = `📉 ${diff} show${diff === 1 ? '' : 's'} dropped off`;
                     deltaMsgElement.style.color = '#f87171';
                     if (droppedShows.length > 0) {
-                        deltaMsgElement.title = droppedShows
+                        deltaHelpBoxEl.textContent = droppedShows
                             .map(s => `${s.title || 'Unknown show'}${s.year ? ' (' + s.year + ')' : ''}`)
                             .join('\n');
-                        deltaMsgElement.style.cursor = 'help';
+                        deltaHelpEl.classList.add('visible');
                     }
+                    popStat(deltaMsgElement);
                 } else {
                     deltaMsgElement.textContent = `✅ Shows Matched`;
                     deltaMsgElement.style.color = '#a1a1aa';
@@ -931,7 +950,7 @@ function setCardState(card, isNotWatching) {
     const btn = card.querySelector('.watch-toggle');
     btn.querySelector('.icon-open').style.display = isNotWatching ? 'none' : 'block';
     btn.querySelector('.icon-closed').style.display = isNotWatching ? 'block' : 'none';
-    btn.title = isNotWatching ? 'Click to mark as watching' : 'Click to mark as not watching';
+    btn.title = isNotWatching ? 'Mark as watching' : 'Mark as not watching';
 }
 
 async function toggleWatch(btn) {
