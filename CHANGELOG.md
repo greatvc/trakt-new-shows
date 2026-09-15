@@ -2,7 +2,7 @@
 
 All notable changes to this project are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
-## 🏷️ [v2.3.0] - 15/9/26 ![Release](https://img.shields.io/badge/Release-22c55e)
+## 🏷️ [v2.3.0] - 15/9/26 &nbsp;&nbsp;&nbsp;![Release](https://img.shields.io/badge/Release-22c55e)
 
 ### ✨ Added
 - 🆕 New page **watched.php** - shows every show currently marked "watching" for a given month, in a clean simplified card layout (no ribbon, no NEW SHOW badge, no watch/not-watch toggle, just the show in full color with a large highlighted air date). Reached via a new icon button next to "Watching:" in the stats panel.
@@ -20,7 +20,7 @@ All notable changes to this project are documented here. Format loosely follows 
 ### 🛡️ Fixed
 - watched.php now checks whether a month has ever been visited on the main page before doing anything - if not, it shows a clear "No Data Yet" message instead of implying every show that month is being watched when nothing has actually been decided yet.
 
-## 🏷️ [v2.2.0] - 8/9/26 ![Release](https://img.shields.io/badge/Release-22c55e)
+## 🏷️ [v2.2.0] - 8/9/26 &nbsp;&nbsp;&nbsp;![Release](https://img.shields.io/badge/Release-22c55e)
 
 ### ✨ Added
 - 👀 New-show cards now get two dedicated buttons — eye.png ("mark as watching") and eyeclosed.png ("mark as not watching") — right where the toggle normally sits, so you can resolve a fresh premiere in one click without hunting for the toggle under the badge.
@@ -89,7 +89,7 @@ All notable changes to this project are documented here. Format loosely follows 
 - 🔐 Trakt API credentials moved out of the script into a git-ignored `config.php` (see `config.example.php`).
 - 🖼️ Site logos/icons switched from a Backblaze-hosted CDN to local files under `images/`, using relative paths (works whether the site is hosted at a domain root or in a subfolder).
 
-## 🏷️ [v1.0.0] - Initial version
+## 🏷️ [v1.0.0] - Initial version &nbsp;&nbsp;&nbsp;![Initial Release](https://img.shields.io/badge/Initial-Release-22c55e?labelColor=124fde)
 
 ### ✨ Added
 - 🎬 First working version: fetches new show premieres for a hardcoded month from the Trakt API, filtered by genre/country, grouped by day, with a "not watching" toggle saved to `localStorage`.
