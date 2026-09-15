@@ -1,7 +1,7 @@
 <?php
 // Kept in sync manually with the same variable in trakt.php - bump both
 // together when releasing a new version.
-$TraktVersion = 'v2.2.0';
+$TraktVersion = 'v2.3.0';
 
 date_default_timezone_set('Europe/Athens');
 

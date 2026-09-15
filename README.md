@@ -35,6 +35,7 @@ Trakt's V3 redesign removed the ability to simply browse "what new shows are pre
 - 🎬 Grouped by day, with posters, ratings, genres, network & country
 - 📡 Country flags and network logos (Netflix, HBO, Apple TV+, etc.) on each card, with graceful emoji/text fallback when unavailable
 - ✅ Mark shows as "watching" / "not watching" — synced server-side, so it follows you across devices
+- 🎬 Dedicated "Watching" page (`watched.php`) — see every show you've currently got marked as watching for the month, in a clean simplified list, one click away from the main page
 - 📈 Tracks premiere counts over time and shows the change since your last visit
 - 🆕 Green "NEW SHOW" badge on premieres added since your last visit
 - 🖼️ All static assets served locally — no third-party bandwidth used on every page load

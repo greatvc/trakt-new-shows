@@ -2,6 +2,24 @@
 
 All notable changes to this project are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## 🏷️ [v2.3.0] - 15/9/26 ![Release](https://img.shields.io/badge/Release-22c55e)
+
+### ✨ Added
+- 🆕 New page **watched.php** - shows every show currently marked "watching" for a given month, in a clean simplified card layout (no ribbon, no NEW SHOW badge, no watch/not-watch toggle, just the show in full color with a large highlighted air date). Reached via a new icon button next to "Watching:" in the stats panel.
+- 🎈 Floating "back to top" button next to the stats card, appearing after ~300px of scroll, with a smooth scroll-to-top on click.
+- 🛈 The "X shows dropped off" message now shows a custom-styled hover tooltip (not the browser's native one) listing exactly which shows disappeared, as "Show Name (Year)".
+
+### 🛠️ Changed
+- 🎉 The "X shows dropped off" message now gets the same boom/pop animation as the "joined the lineup" counter.
+- ✂️ Watch-toggle tooltips shortened from "Click to mark as watching/not watching" to just "Mark as watching/not watching".
+- 🗑️ Removed the Reset button and its clearData() function from the stats panel.
+- 🖼️ Icon overhaul in the stats panel and on watched.php: several emoji/PNG icons replaced with custom images (watching.png, filter.png, watchedshows.png, nowatching.png), with matching size/alignment/spacing adjustments.
+- 🧭 The "Watching" link to watched.php now hides automatically whenever there's unresolved new-show ambiguity, or when there are simply zero shows currently marked watching - avoiding a page that could otherwise show misleading data.
+- 📏 Fixed a vertical alignment issue in the stats panel where rows containing icons/buttons made their numbers sit slightly off compared to plain rows.
+
+### 🛡️ Fixed
+- watched.php now checks whether a month has ever been visited on the main page before doing anything - if not, it shows a clear "No Data Yet" message instead of implying every show that month is being watched when nothing has actually been decided yet.
+
 ## 🏷️ [v2.2.0] - 8/9/26 ![Release](https://img.shields.io/badge/Release-22c55e)
 
 ### ✨ Added
