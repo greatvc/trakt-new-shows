@@ -488,8 +488,17 @@ $totalShowsFetched = count($shows);
         .back-to-top.visible:hover { transform: translateY(-3px) scale(1.08); }
         .back-to-top:active { transform: scale(0.9); }
         .back-to-top img { width: 30px; height: 30px; object-fit: contain; }
-        .stats-row { display: flex; justify-content: space-between; width: 100%; margin-bottom: 4px; }
+        .stats-row { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 4px; }
         .stats-row strong { color: var(--gold-soft); font-size: 0.92rem; display: inline-block; }
+        .watching-label { display: flex; align-items: center; gap: 14px; }
+        .watching-eye-btn {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+            background: rgba(255,255,255,0.05); border: 1px solid var(--card-border);
+            transition: all .18s ease; text-decoration: none;
+        }
+        .watching-eye-btn img { width: 14px; height: 14px; object-fit: contain; }
+        .watching-eye-btn:hover { background: rgba(232,181,69,0.9); border-color: var(--gold); box-shadow: 0 0 10px rgba(232,181,69,0.55); transform: scale(1.15); }
         @keyframes statPop {
             0%   { transform: scale(1) rotate(0deg); text-shadow: none; }
             25%  { transform: scale(1.7) rotate(-4deg); text-shadow: 0 0 10px var(--gold), 0 0 22px var(--crimson); color: var(--crimson); }
@@ -640,7 +649,14 @@ $totalShowsFetched = count($shows);
             <div class="delta-row"><span id="deltaMsg" class="delta-msg"></span><span id="deltaHelp" class="delta-help">❓<span id="deltaHelpBox" class="delta-help-box"></span></span></div>
         </div>
         <hr class="stats-divider">
-        <div class="stats-row"><span>👀 Watching:</span><strong id="statWatching">0</strong></div>
+        <div class="stats-row">
+            <span class="watching-label">👀 Watching:
+                <a id="watchingEyeBtn" class="watching-eye-btn" href="watched.php?month=<?php echo $TraktMonth; ?>&amp;year=<?php echo $TraktYear; ?>" title="Display Watching Items" aria-label="Display Watching Items" style="display:none;">
+                    <img src="images/filter.png" alt="View watching shows">
+                </a>
+            </span>
+            <strong id="statWatching">0</strong>
+        </div>
         <div class="stats-row"><span>🚫 Not Watching:</span><strong id="statNotWatching">0</strong></div>
         <div id="historyLog" class="history-log"></div>
     </div>
@@ -997,8 +1013,8 @@ async function resolveNewShow(btn, markAsNotWatching) {
         notWatching.delete(id);
     }
 
-    updateStats();
     decrementNewShowCount();
+    updateStats();
 
     try {
         await saveState();
@@ -1054,6 +1070,19 @@ function updateStats() {
     notWatchingEl.textContent = actualNotWatching;
 
     lastKnownStats = { total, watching: actualWatching, notWatching: actualNotWatching };
+    refreshWatchingEyeBtn();
+}
+
+// Single source of truth for whether the "Watching" eye-icon link should be
+// visible: hidden whenever there's unresolved new-show ambiguity, AND
+// whenever there are simply zero shows currently marked watching (nothing to
+// show on watched.php anyway). Called after every action that could affect
+// either value, so it never needs a page refresh to update.
+function refreshWatchingEyeBtn() {
+    const watchingEyeBtn = document.getElementById('watchingEyeBtn');
+    if (!watchingEyeBtn) return;
+    const canShow = remainingNewCount === 0 && lastKnownStats.watching > 0;
+    watchingEyeBtn.style.display = canShow ? 'inline-flex' : 'none';
 }
 
 // ============================================================================

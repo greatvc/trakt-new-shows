@@ -12,3 +12,4 @@ images/networks/
 # OS / editor junk
 .DS_Store
 Thumbs.db
+check-github.sh
