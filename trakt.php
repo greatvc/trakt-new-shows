@@ -1055,7 +1055,8 @@ function popStat(el) {
 function updateStats() {
     const total = currentTotalShows;
     const actualNotWatching = document.querySelectorAll('.card.not-watching').length;
-    const actualWatching = total - actualNotWatching;
+    const actualNew = document.querySelectorAll('.card.is-new').length;
+    const actualWatching = total - actualNotWatching - actualNew;
 
     const totalEl = document.getElementById('statTotal');
     const watchingEl = document.getElementById('statWatching');
