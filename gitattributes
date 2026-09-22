@@ -1,0 +1,9 @@
+# Normalize text files to LF in the repository regardless of OS, so
+# Windows checkouts don't trigger "LF will be replaced by CRLF" warnings
+# and everyone's diffs stay clean.
+* text=auto eol=lf
+
+# Explicitly mark binary assets so git never tries to normalize them.
+*.png binary
+*.ico binary
+*.svg text eol=lf
