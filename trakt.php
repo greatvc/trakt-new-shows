@@ -840,7 +840,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Render History
         document.getElementById('historyLog').innerHTML = '<strong>History:</strong>' +
-            [...historyLog].reverse().map(i => `<div style="display:flex; justify-content:space-between;"><span>${getRelativeDayLabel(i.date)} ${i.time}</span><span>${i.count} shows</span></div>`).join('');
+            [...historyLog].reverse().map(i => `<div style="display:flex; justify-content:space-between;"><span>${getRelativeDayLabel(i.date)} ${i.time}</span><span>${i.count} show${i.count === 1 ? '' : 's'}</span></div>`).join('');
 
         // Restore card toggle states
         document.querySelectorAll('.card').forEach(card => {
