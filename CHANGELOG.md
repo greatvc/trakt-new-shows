@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## 🏷️ [v2.3.1] - 28/9/26 &nbsp;&nbsp;&nbsp;![Release](https://img.shields.io/badge/Release-22c55e)
+
+### 🛡️ Fixed
+- 🔢 Fixed the "Watching" stat incorrectly counting unresolved "NEW SHOW" cards (still showing the two mark-watching/mark-not-watching buttons, no decision made yet) as already watching by default. They're now excluded from both Watching and Not Watching until actually resolved.
+- 🔡 Fixed singular/plural grammar in the history log ("1 shows" now correctly reads "1 show").
+- 📄 Fixed line-ending inconsistencies (CRLF vs LF) between Windows checkouts and the repository via a new `.gitattributes` file, eliminating git's "LF will be replaced by CRLF" warning on commit.
+
 ## 🏷️ [v2.3.0] - 15/9/26 &nbsp;&nbsp;&nbsp;![Release](https://img.shields.io/badge/Release-22c55e)
 
 ### ✨ Added

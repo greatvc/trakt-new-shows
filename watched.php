@@ -1,7 +1,7 @@
 <?php
 // Kept in sync manually with the same variable in trakt.php - bump both
 // together when releasing a new version.
-$TraktVersion = 'v2.3.0';
+$TraktVersion = 'v2.3.1';
 
 date_default_timezone_set('Europe/Athens');
 
@@ -56,7 +56,7 @@ function renderNoDataYet($monthLabel, $month, $year) {
             <div class="msg">
                 You haven't visited <strong><?php echo htmlspecialchars($monthLabel); ?></strong> on the main page yet, so nothing has been marked "not watching" for that month.
             </div>
-            <a class="go-btn" href="trakt.php?month=<?php echo (int)$month; ?>&amp;year=<?php echo (int)$year; ?>">&larr; Go to New Shows for this month</a>
+            <a class="go-btn" href="index.php?month=<?php echo (int)$month; ?>&amp;year=<?php echo (int)$year; ?>">&larr; Go to New Shows for this month</a>
         </div>
     </body>
     </html>
@@ -392,7 +392,7 @@ $generatedStamp = date('H:i');
         <span><img src="images/watching.png" alt="" class="stat-icon"> <?php echo ($totalWatching === 0) ? 'No Shows' : $totalWatching . ' Watching'; ?></span>
         <span>🕒 <?php echo htmlspecialchars($generatedStamp); ?></span>
     </div>
-    <a class="back-link" href="trakt.php?month=<?php echo $TraktMonth; ?>&amp;year=<?php echo $TraktYear; ?>">&larr; Back to New Shows</a>
+    <a class="back-link" href="index.php?month=<?php echo $TraktMonth; ?>&amp;year=<?php echo $TraktYear; ?>">&larr; Back to New Shows</a>
 </header>
 
 <main>
