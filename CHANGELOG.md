@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## 🏷️ [v2.3.2] - 29/9/26
+
+### 🛡️ Fixed
+- 🆕 A month visited for the very first time no longer silently marks every show as "watching" by default. Every premiere now gets the same "NEW SHOW" badge and two-button (mark watching / mark not watching) treatment as an individual new arrival, and is correctly excluded from the Watching/Not Watching stats until you actually decide - consistent with the v2.3.1 fix for unresolved new shows.
+
 ## 🏷️ [v2.3.1] - 28/9/26 &nbsp;&nbsp;&nbsp;![Release](https://img.shields.io/badge/Release-22c55e)
 
 ### 🛡️ Fixed

@@ -2,7 +2,7 @@
 // ============================================================================
 // VERSION - bump this manually with each release. Shown in the footer.
 // ============================================================================
-$TraktVersion = 'v2.3.1';
+$TraktVersion = 'v2.3.2';
 
 date_default_timezone_set('Europe/Athens');
 
@@ -857,12 +857,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         }));
         const currentIds = new Set(currentShows.map(s => s.id));
 
-        // previousShows is null only on the very first run ever (no previous data
-        // to compare against) - in that case we deliberately skip "new"/"dropped"
-        // detection entirely, since "everything is new" isn't a useful signal.
-        // Falls back to the older lastShowIds format (plain id strings, no
-        // title/year) if this state file predates this feature, so upgrading
-        // doesn't wrongly flag every existing show as new on the next visit.
+        // previousShows is null only on the very first run ever for this month
+        // (no previous data to compare against). Falls back to the older
+        // lastShowIds format (plain id strings, no title/year) if this state
+        // file predates this feature, so upgrading doesn't wrongly flag every
+        // existing show as new on the next visit.
         let previousShows = null;
         if (Array.isArray(state.lastShows)) {
             previousShows = state.lastShows;
@@ -870,29 +869,32 @@ document.addEventListener('DOMContentLoaded', async () => {
             previousShows = state.lastShowIds.map(id => ({ id, title: null, year: null }));
         }
 
-        let droppedShows = [];
-        if (previousShows) {
-            const previousIds = new Set(previousShows.map(s => s.id));
+        // On a true first-ever visit, previousShows is null - treat that as an
+        // empty list rather than skipping detection entirely, so every show
+        // gets the same "undecided, needs a choice" treatment as an individual
+        // new arrival would: NEW SHOW badge, two-button UI, excluded from the
+        // Watching/Not Watching stats until resolved. This keeps the stats
+        // honest (no silent default-to-watching for shows you've never
+        // actually seen) instead of a one-off "everything is new" skip.
+        const previousIds = new Set((previousShows || []).map(s => s.id));
 
-            // Mark cards as "new" if they weren't present last visit.
-            document.querySelectorAll('.card').forEach(card => {
-                const id = card.getAttribute('data-id');
-                if (id && !previousIds.has(id)) {
-                    card.classList.add('is-new');
-                    // If this show was marked "not watching" before it vanished and
-                    // is now reappearing, treat it as a genuinely fresh premiere -
-                    // clear the stale flag so it doesn't show a confusing mix of
-                    // "not watching" styling alongside the NEW SHOW UI.
-                    if (notWatching.has(id)) {
-                        notWatching.delete(id);
-                        setCardState(card, false);
-                    }
+        document.querySelectorAll('.card').forEach(card => {
+            const id = card.getAttribute('data-id');
+            if (id && !previousIds.has(id)) {
+                card.classList.add('is-new');
+                // If this show was marked "not watching" before it vanished and
+                // is now reappearing, treat it as a genuinely fresh premiere -
+                // clear the stale flag so it doesn't show a confusing mix of
+                // "not watching" styling alongside the NEW SHOW UI.
+                if (notWatching.has(id)) {
+                    notWatching.delete(id);
+                    setCardState(card, false);
                 }
-            });
+            }
+        });
 
-            // Shows that were present last visit but aren't in this run's calendar at all.
-            droppedShows = previousShows.filter(s => s.id && !currentIds.has(s.id));
-        }
+        // Shows that were present last visit but aren't in this run's calendar at all.
+        const droppedShows = (previousShows || []).filter(s => s.id && !currentIds.has(s.id));
 
         // Delta tracking (did the count change since last visit?)
         // If there are unresolved NEW SHOW cards, that counter takes over the
