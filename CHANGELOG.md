@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## 🏷️ [v2.4.0] - 18/10/26 &nbsp;&nbsp;&nbsp;![Release](https://img.shields.io/badge/Release-22c55e)
+
+### ✨ Added
+- 🖼️ Animated header banner on both **trakt.php** and **watched.php** - real TMDB posters drift behind the title, a fresh random mix on every page load, refresh, or month change, fading into the page's own gold/crimson palette.
+- 📺 **trakt.php** also gets a hand-drawn blue/grey CSS TV in the header whose screen shows one random backdrop from the same set, picked fresh on each load (static, not a slideshow). **watched.php** keeps just the poster wall, since it already has its own large icon.
+- 🧩 Fully self-contained per page (own cache dir, helper functions and `?action=wall` JSON endpoint) - gracefully does nothing if `$TmdbApiKey` isn't configured.
+
 ## 🏷️ [v2.3.2] - 29/9/26
 
 ### 🛡️ Fixed

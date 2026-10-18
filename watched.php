@@ -1,7 +1,7 @@
 <?php
 // Kept in sync manually with the same variable in trakt.php - bump both
 // together when releasing a new version.
-$TraktVersion = 'v2.3.2';
+$TraktVersion = 'v2.4.0';
 
 date_default_timezone_set('Europe/Athens');
 
@@ -91,6 +91,120 @@ require $configFile;
 
 if (!isset($TmdbApiKey)) {
     $TmdbApiKey = null;
+}
+
+// ============================================================================
+// HEADER BANNER - real TMDB posters + a TV in the header, same feature as
+// trakt.php (kept in sync manually - see trakt.php for the fuller comment).
+// Self-contained (own cache dir, own helper functions, own JSON endpoint),
+// and placed before the "no data yet" bailout below so ?action=wall still
+// works even for a month trakt.php hasn't been visited for yet.
+// ============================================================================
+define('BANNER_CACHE_DIR', rtrim(sys_get_temp_dir(), '/\\') . DIRECTORY_SEPARATOR . 'trakt-banner-' . substr(md5(__DIR__), 0, 8));
+if (!is_dir(BANNER_CACHE_DIR)) @mkdir(BANNER_CACHE_DIR, 0775, true);
+
+const BANNER_WALL_TITLES = [
+    ['tv', 'Lost', 2004],              ['tv', 'Alias', 2001],
+    ['tv', 'Friends', 1994],           ['tv', 'Sex and the City', 1998],
+    ['tv', 'Gilmore Girls', 2000],     ['tv', 'Grey\'s Anatomy', 2005],
+    ['tv', 'Desperate Housewives', 2004], ['tv', 'Breaking Bad', 2008],
+    ['tv', 'Game of Thrones', 2011],   ['tv', 'The Office', 2005],
+    ['tv', 'Stranger Things', 2016],   ['tv', 'Prison Break', 2005],
+    ['tv', 'House', 2004],             ['tv', 'The Crown', 2016],
+    ['movie', 'Titanic', 1997],        ['movie', 'The Notebook', 2004],
+    ['movie', 'Pretty Woman', 1990],   ['movie', 'La La Land', 2016],
+    ['movie', 'The Devil Wears Prada', 2006], ['movie', 'Notting Hill', 1999],
+    ['movie', 'Mamma Mia!', 2008],     ['movie', 'Forrest Gump', 1994],
+    ['movie', 'Pulp Fiction', 1994],   ['movie', 'Inception', 2010],
+    ['movie', 'The Godfather', 1972],  ['movie', 'Barbie', 2023],
+];
+
+function banner_cache_get(string $key, int $ttl) {
+    $f = BANNER_CACHE_DIR . DIRECTORY_SEPARATOR . md5($key) . '.json';
+    if (is_file($f) && (time() - filemtime($f)) < $ttl) {
+        $d = json_decode((string)@file_get_contents($f), true);
+        if (is_array($d) && array_key_exists('v', $d)) return $d['v'];
+    }
+    return null;
+}
+
+function banner_cache_put(string $key, $value): void {
+    @file_put_contents(BANNER_CACHE_DIR . DIRECTORY_SEPARATOR . md5($key) . '.json', json_encode(['v' => $value]), LOCK_EX);
+}
+
+function banner_tmdb_headers(string $tmdbKey): array {
+    $h = ['Accept: application/json'];
+    if (strlen($tmdbKey) > 40) $h[] = 'Authorization: Bearer ' . $tmdbKey;
+    return $h;
+}
+
+function banner_tmdb_url(string $tmdbKey, string $path, array $params = []): string {
+    if (strlen($tmdbKey) <= 40) $params['api_key'] = $tmdbKey;
+    return 'https://api.themoviedb.org/3/' . $path . '?' . http_build_query($params);
+}
+
+/** Fires every TMDB search in parallel instead of one request at a time. */
+function banner_http_multi(array $reqs): array {
+    $mh = curl_multi_init();
+    $hs = [];
+    foreach ($reqs as $k => $r) {
+        $ch = curl_init($r['url']);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER     => $r['headers'],
+            CURLOPT_TIMEOUT        => 10,
+            CURLOPT_CONNECTTIMEOUT => 5,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_ENCODING       => '',
+        ]);
+        curl_multi_add_handle($mh, $ch);
+        $hs[$k] = $ch;
+    }
+    do {
+        $st = curl_multi_exec($mh, $running);
+        if ($running) curl_multi_select($mh, 1.0);
+    } while ($running && $st === CURLM_OK);
+    $out = [];
+    foreach ($hs as $k => $ch) {
+        $body = (string)curl_multi_getcontent($ch);
+        $out[$k] = $body !== '' ? json_decode($body, true) : null;
+        curl_multi_remove_handle($mh, $ch);
+    }
+    curl_multi_close($mh);
+    return $out;
+}
+
+/** Real TMDB posters + backdrops for the header banner (cached 30 days). */
+function banner_poster_wall(?string $tmdbKey): array {
+    if (!$tmdbKey) return [];
+    $cacheKey = 'wall:' . md5(json_encode(BANNER_WALL_TITLES));
+    $cached = banner_cache_get($cacheKey, 2592000);
+    if ($cached !== null) return $cached;
+
+    $reqs = [];
+    foreach (BANNER_WALL_TITLES as $i => [$kind, $title, $year]) {
+        $yearKey  = $kind === 'tv' ? 'first_air_date_year' : 'year';
+        $reqs[$i] = ['url' => banner_tmdb_url($tmdbKey, "search/$kind", ['query' => $title, $yearKey => $year]), 'headers' => banner_tmdb_headers($tmdbKey)];
+    }
+    $out = [];
+    foreach (banner_http_multi($reqs) as $r) {
+        $h = $r['results'][0] ?? null;
+        if (!$h || empty($h['poster_path'])) continue;
+        $out[] = [
+            'p' => 'https://image.tmdb.org/t/p/w185' . $h['poster_path'],
+            'b' => !empty($h['backdrop_path']) ? 'https://image.tmdb.org/t/p/w780' . $h['backdrop_path'] : null,
+        ];
+    }
+    if (count($out) >= 6) banner_cache_put($cacheKey, $out);
+    return $out;
+}
+
+// JSON endpoint the banner's own JS calls on every page load: ?action=wall
+if (($_GET['action'] ?? '') === 'wall') {
+    header('Content-Type: application/json; charset=utf-8');
+    header('Cache-Control: no-store');
+    echo json_encode(['items' => banner_poster_wall($TmdbApiKey)], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    exit;
 }
 
 // Keep these filters identical to trakt.php, so the shows considered here
@@ -315,7 +429,8 @@ $generatedStamp = date('H:i');
                         radial-gradient(circle at 85% 20%, rgba(224,56,77,0.07), transparent 45%), var(--bg);
             color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; padding-bottom: 40px;
         }
-        header.hero { padding: 56px 6vw 34px 6vw; border-bottom: 1px solid var(--card-border); background: linear-gradient(180deg, rgba(232,181,69,0.06), transparent); }
+        header.hero { position: relative; overflow: hidden; padding: 56px 6vw 34px 6vw; border-bottom: 1px solid var(--card-border); background: linear-gradient(180deg, rgba(232,181,69,0.06), transparent); }
+        header.hero .brand-row, header.hero .sub, header.hero .back-link { position: relative; z-index: 2; }
         .brand-row { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
         .brand-row img.brand-logo { height: 64px; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.55)); }
         .brand-row h1 {
@@ -379,11 +494,105 @@ $generatedStamp = date('H:i');
         .site-footer { text-align: center; padding: 22px 6vw 36px 6vw; }
         .site-footer p { font-size: 0.72rem; color: var(--text-faint); opacity: 0.55; line-height: 1.7; }
         .site-footer .version-tag { color: var(--gold-soft); font-weight: 700; letter-spacing: 0.3px; }
+
+        /* ====================================================================
+           HEADER BANNER - real TMDB posters drifting behind the title, plus
+           a TV whose screen shows one random backdrop (set on load/refresh,
+           not animated). Same feature as trakt.php, scoped under .banner.
+           ==================================================================== */
+        .banner { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+
+        .banner .fade {
+            position: absolute; inset: 0; overflow: hidden;
+            -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 55%, transparent 100%);
+                    mask-image: linear-gradient(180deg, #000 0%, #000 55%, transparent 100%);
+        }
+
+        .banner .wall {
+            position: absolute; left: -20%; right: -20%; top: -18%;
+            display: flex; flex-direction: column; gap: 12px;
+            transform: rotate(-7deg);
+            opacity: 0; transition: opacity 1.2s ease;
+        }
+        .banner .wall.ready { opacity: .5; }
+
+        .banner .row { display: flex; gap: 12px; width: max-content; animation: bannerDrift 120s linear infinite; }
+        .banner .row:nth-child(2) { animation-direction: reverse; animation-duration: 150s; }
+        .banner .row:nth-child(3) { animation-duration: 135s; }
+        .banner .row img {
+            width: clamp(58px, 6.5vw, 92px); aspect-ratio: 2 / 3; object-fit: cover;
+            border-radius: 8px; display: block; box-shadow: 0 8px 18px -8px rgba(0,0,0,0.6);
+        }
+        @keyframes bannerDrift { to { transform: translateX(-50%); } }
+
+        .banner .fade::after {
+            content: ""; position: absolute; inset: 0;
+            background:
+                linear-gradient(180deg, color-mix(in srgb, var(--bg) 55%, transparent) 0%, var(--bg) 100%),
+                linear-gradient(90deg, color-mix(in srgb, var(--bg-panel) 70%, transparent), transparent 30%, transparent 70%, color-mix(in srgb, var(--crimson) 22%, transparent));
+        }
+
+        /* the TV - blue/grey, drawn purely with CSS */
+        .banner .tv {
+            --tv-light: #D9E3EA; --tv-mid: #8FA6B8; --tv-deep: #526378;
+            --tv-screen-glow: #324354; --tv-knob-ring: #9FC2D6;
+            position: absolute; z-index: 2;
+            right: clamp(150px, 17vw, 260px);
+            bottom: clamp(10px, 2vw, 22px);
+            width: clamp(92px, 10vw, 148px);
+            aspect-ratio: 5 / 4;
+            border-radius: 22% / 26%;
+            background: linear-gradient(150deg, var(--tv-light) 0%, var(--tv-mid) 45%, var(--tv-deep) 100%);
+            box-shadow: inset 0 -6px 0 #0000001f, 0 18px 30px -12px #050608;
+        }
+        .banner .tv::before, .banner .tv::after {
+            content: ""; position: absolute; bottom: 100%; left: 44%;
+            width: 3px; height: 34%; border-radius: 3px;
+            background: var(--tv-light);
+            transform-origin: bottom center; transform: rotate(-32deg);
+        }
+        .banner .tv::after { transform: rotate(30deg); }
+        .banner .tv .screen {
+            position: absolute; top: 10%; bottom: 12%; left: 8%; right: 27%;
+            border-radius: 16% / 20%; overflow: hidden;
+            background: radial-gradient(circle at 40% 35%, var(--tv-screen-glow), var(--bg));
+            box-shadow: inset 0 0 0 3px #00000066;
+        }
+        .banner .tv .screen img {
+            position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+            opacity: 0; transition: opacity 1s ease;
+        }
+        .banner .tv .screen img.on { opacity: 1; }
+        .banner .tv .screen::after {
+            content: ""; position: absolute; inset: 0;
+            background:
+                repeating-linear-gradient(180deg, #ffffff10 0 1px, transparent 1px 3px),
+                radial-gradient(circle at 30% 20%, #ffffff30, transparent 45%);
+        }
+        .banner .tv .knobs { position: absolute; right: 8%; top: 22%; display: flex; flex-direction: column; gap: 14%; width: 11%; height: 56%; }
+        .banner .tv .knobs i { display: block; aspect-ratio: 1; border-radius: 50%; background: var(--bg); box-shadow: inset 0 0 0 3px var(--tv-knob-ring); }
+        .banner .tv .legs::before, .banner .tv .legs::after {
+            content: ""; position: absolute; top: 100%; width: 9%; height: 9%;
+            border-radius: 0 0 4px 4px; background: var(--tv-deep); left: 16%;
+        }
+        .banner .tv .legs::after { left: auto; right: 16%; }
+
+        @media (max-width: 560px) {
+            .banner .tv { display: none; }
+        }
     </style>
 </head>
 <body>
 
 <header class="hero">
+    <div class="banner" aria-hidden="true">
+        <div class="fade"><div class="wall" id="bannerWall"></div></div>
+        <div class="tv">
+            <div class="screen" id="bannerScreen"></div>
+            <div class="knobs"><i></i><i></i></div>
+            <span class="legs"></span>
+        </div>
+    </div>
     <div class="brand-row">
         <img class="brand-logo" src="<?php echo htmlspecialchars($TraktLogoTop); ?>" alt="Trakt">
         <h1>Watching Shows &mdash; <?php echo htmlspecialchars($monthLabel); ?></h1>
@@ -492,5 +701,64 @@ $generatedStamp = date('H:i');
     No AI was harmed during this, except from Fuck you Gemini cannot distinguish &lt;body&gt; from &lt;script&gt;</p>
 </footer>
 
+<script>
+// ============================================================================
+// HEADER BANNER - poster wall + TV, same as trakt.php. Self-contained IIFE;
+// touches nothing else on this page besides #bannerWall / #bannerScreen.
+// ============================================================================
+(async () => {
+    const wallEl = document.getElementById('bannerWall');
+    const screenEl = document.getElementById('bannerScreen');
+    if (!wallEl || !screenEl) return;
+
+    let items = [];
+    try {
+        const url = new URL(location.href);
+        url.searchParams.set('action', 'wall');
+        const res = await fetch(url, { headers: { Accept: 'application/json' } });
+        const data = await res.json();
+        items = data.items || [];
+    } catch (_) { return; }
+    if (items.length < 6) return;
+
+    const shuffle = (a) => {
+        a = a.slice();
+        for (let i = a.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+    };
+
+    for (let r = 0; r < 3; r++) {
+        const row = document.createElement('div');
+        row.className = 'row';
+        const set = shuffle(items);
+        [...set, ...set].forEach((it) => {
+            const img = document.createElement('img');
+            img.src = it.p;
+            img.alt = '';
+            img.decoding = 'async';
+            img.onerror = () => img.remove();
+            row.append(img);
+        });
+        wallEl.append(row);
+    }
+    requestAnimationFrame(() => wallEl.classList.add('ready'));
+
+    // TV screen: one random backdrop, picked fresh on every page load/refresh
+    // - deliberately NOT a slideshow/animation.
+    const withBackdrop = items.filter((x) => x.b);
+    if (withBackdrop.length) {
+        const pick = withBackdrop[Math.floor(Math.random() * withBackdrop.length)];
+        const img = document.createElement('img');
+        img.src = pick.b;
+        img.alt = '';
+        img.decoding = 'async';
+        img.className = 'on';
+        screenEl.append(img);
+    }
+})();
+</script>
 </body>
 </html>
