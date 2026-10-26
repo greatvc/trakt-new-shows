@@ -17,6 +17,8 @@ function renderNoDataYet($monthLabel, $month, $year) {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>No Data Yet</title>
         <link rel="shortcut icon" href="images/favicon.ico">
+        <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32.png">
+        <link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.png">
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;700&display=swap" rel="stylesheet">
@@ -414,6 +416,8 @@ $generatedStamp = date('H:i');
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Watching Shows &ndash; <?php echo htmlspecialchars($monthLabel); ?></title>
     <link rel="shortcut icon" href="images/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;700&display=swap" rel="stylesheet">
@@ -496,9 +500,9 @@ $generatedStamp = date('H:i');
         .site-footer .version-tag { color: var(--gold-soft); font-weight: 700; letter-spacing: 0.3px; }
 
         /* ====================================================================
-           HEADER BANNER - real TMDB posters drifting behind the title, plus
-           a TV whose screen shows one random backdrop (set on load/refresh,
-           not animated). Same feature as trakt.php, scoped under .banner.
+           HEADER BANNER - real TMDB posters drifting behind the title (no TV
+           here, unlike trakt.php - watched.php already has its own big
+           watchedshows.png icon). Scoped entirely under .banner.
            ==================================================================== */
         .banner { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
 
@@ -532,54 +536,6 @@ $generatedStamp = date('H:i');
                 linear-gradient(90deg, color-mix(in srgb, var(--bg-panel) 70%, transparent), transparent 30%, transparent 70%, color-mix(in srgb, var(--crimson) 22%, transparent));
         }
 
-        /* the TV - blue/grey, drawn purely with CSS */
-        .banner .tv {
-            --tv-light: #D9E3EA; --tv-mid: #8FA6B8; --tv-deep: #526378;
-            --tv-screen-glow: #324354; --tv-knob-ring: #9FC2D6;
-            position: absolute; z-index: 2;
-            right: clamp(150px, 17vw, 260px);
-            bottom: clamp(10px, 2vw, 22px);
-            width: clamp(92px, 10vw, 148px);
-            aspect-ratio: 5 / 4;
-            border-radius: 22% / 26%;
-            background: linear-gradient(150deg, var(--tv-light) 0%, var(--tv-mid) 45%, var(--tv-deep) 100%);
-            box-shadow: inset 0 -6px 0 #0000001f, 0 18px 30px -12px #050608;
-        }
-        .banner .tv::before, .banner .tv::after {
-            content: ""; position: absolute; bottom: 100%; left: 44%;
-            width: 3px; height: 34%; border-radius: 3px;
-            background: var(--tv-light);
-            transform-origin: bottom center; transform: rotate(-32deg);
-        }
-        .banner .tv::after { transform: rotate(30deg); }
-        .banner .tv .screen {
-            position: absolute; top: 10%; bottom: 12%; left: 8%; right: 27%;
-            border-radius: 16% / 20%; overflow: hidden;
-            background: radial-gradient(circle at 40% 35%, var(--tv-screen-glow), var(--bg));
-            box-shadow: inset 0 0 0 3px #00000066;
-        }
-        .banner .tv .screen img {
-            position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
-            opacity: 0; transition: opacity 1s ease;
-        }
-        .banner .tv .screen img.on { opacity: 1; }
-        .banner .tv .screen::after {
-            content: ""; position: absolute; inset: 0;
-            background:
-                repeating-linear-gradient(180deg, #ffffff10 0 1px, transparent 1px 3px),
-                radial-gradient(circle at 30% 20%, #ffffff30, transparent 45%);
-        }
-        .banner .tv .knobs { position: absolute; right: 8%; top: 22%; display: flex; flex-direction: column; gap: 14%; width: 11%; height: 56%; }
-        .banner .tv .knobs i { display: block; aspect-ratio: 1; border-radius: 50%; background: var(--bg); box-shadow: inset 0 0 0 3px var(--tv-knob-ring); }
-        .banner .tv .legs::before, .banner .tv .legs::after {
-            content: ""; position: absolute; top: 100%; width: 9%; height: 9%;
-            border-radius: 0 0 4px 4px; background: var(--tv-deep); left: 16%;
-        }
-        .banner .tv .legs::after { left: auto; right: 16%; }
-
-        @media (max-width: 560px) {
-            .banner .tv { display: none; }
-        }
     </style>
 </head>
 <body>
@@ -587,11 +543,6 @@ $generatedStamp = date('H:i');
 <header class="hero">
     <div class="banner" aria-hidden="true">
         <div class="fade"><div class="wall" id="bannerWall"></div></div>
-        <div class="tv">
-            <div class="screen" id="bannerScreen"></div>
-            <div class="knobs"><i></i><i></i></div>
-            <span class="legs"></span>
-        </div>
     </div>
     <div class="brand-row">
         <img class="brand-logo" src="<?php echo htmlspecialchars($TraktLogoTop); ?>" alt="Trakt">
@@ -703,13 +654,13 @@ $generatedStamp = date('H:i');
 
 <script>
 // ============================================================================
-// HEADER BANNER - poster wall + TV, same as trakt.php. Self-contained IIFE;
-// touches nothing else on this page besides #bannerWall / #bannerScreen.
+// HEADER BANNER - poster wall only (no TV here - watched.php already has its
+// own big watchedshows.png icon). Self-contained IIFE; touches nothing else
+// on this page besides #bannerWall.
 // ============================================================================
 (async () => {
     const wallEl = document.getElementById('bannerWall');
-    const screenEl = document.getElementById('bannerScreen');
-    if (!wallEl || !screenEl) return;
+    if (!wallEl) return;
 
     let items = [];
     try {
@@ -745,19 +696,6 @@ $generatedStamp = date('H:i');
         wallEl.append(row);
     }
     requestAnimationFrame(() => wallEl.classList.add('ready'));
-
-    // TV screen: one random backdrop, picked fresh on every page load/refresh
-    // - deliberately NOT a slideshow/animation.
-    const withBackdrop = items.filter((x) => x.b);
-    if (withBackdrop.length) {
-        const pick = withBackdrop[Math.floor(Math.random() * withBackdrop.length)];
-        const img = document.createElement('img');
-        img.src = pick.b;
-        img.alt = '';
-        img.decoding = 'async';
-        img.className = 'on';
-        screenEl.append(img);
-    }
 })();
 </script>
 </body>
