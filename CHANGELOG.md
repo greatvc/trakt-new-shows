@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## 🏷️ [v2.5.0] - 31/10/26
+
+### 🛠️ Changed
+- 🔗 The "trakt" button on every show card (on both **trakt.php** and **watched.php**) now opens the show on `og.trakt.tv` instead of `trakt.tv`, since the original (OG) Trakt site is back. The Trakt API calls (`api.trakt.tv`) are unchanged.
+
+### 🛡️ Fixed
+- 📱 Favicon now shows on iPhone/iPad: added an `apple-touch-icon` (`images/apple-touch-icon.png`) and a 32px PNG icon (`images/favicon-32.png`), since iOS ignores the `.ico` file.
+
 ## 🏷️ [v2.4.0] - 18/10/26 &nbsp;&nbsp;&nbsp;![Release](https://img.shields.io/badge/Release-22c55e)
 
 ### ✨ Added

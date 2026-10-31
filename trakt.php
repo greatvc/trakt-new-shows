@@ -2,7 +2,7 @@
 // ============================================================================
 // VERSION - bump this manually with each release. Shown in the footer.
 // ============================================================================
-$TraktVersion = 'v2.4.0';
+$TraktVersion = 'v2.5.0';
 
 date_default_timezone_set('Europe/Athens');
 
@@ -923,7 +923,7 @@ $totalShowsFetched = count($shows);
                         
                         // FIX: added fallback in case 'slug' is missing, to avoid an undefined-index warning
                         $traktSlug = $show['ids']['slug'] ?? '';
-                        $traktUrl = "https://trakt.tv/shows/{$traktSlug}";
+                        $traktUrl = "https://og.trakt.tv/shows/{$traktSlug}";
                     ?>
                     
                     <div class="card" data-id="<?php echo htmlspecialchars($traktSlug); ?>">
