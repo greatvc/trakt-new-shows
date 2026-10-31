@@ -2,7 +2,7 @@
 // ============================================================================
 // VERSION - bump this manually with each release. Shown in the footer.
 // ============================================================================
-$TraktVersion = 'v2.5.0';
+$TraktVersion = 'v2.4.1';
 
 date_default_timezone_set('Europe/Athens');
 
